@@ -327,7 +327,7 @@ public class SpecializationRequestThread implements Runnable {
             
             msg.strip();
             msg = msg.replaceAll(", $", "");
-            msg = msg + ".\nContact an officer for manual consideration if this is an error. Some things are not yet on the planetside api";
+            msg = msg + ".\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api";
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + msg).queue();
         }else{
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Congratulations on your achievement of the " + clss + ". You have met the requirements!").queue();
