@@ -293,10 +293,12 @@ public class SpecializationRequestThread implements Runnable {
                 
                 if(firstEntry == -1){
                     checkDouble = true;
-                }else{
-                    if(ids.contains(firstEntry)){
-                        met = true;
+                }else if (firstEntry == -2){
+                    if(!(cas.getDirectiveLevel(event, reqIDItr.next(), reqIDItr.next()) == reqIDItr.next())){
+                        missingReqs.add(req.getName());
                     }
+                }else if(ids.contains(firstEntry)){
+                        met = true;
                 }
             }
             

@@ -22,3 +22,10 @@ EventWaiter from JDA-Utilities: https://github.com/JDA-Applications/JDA-Utilitie
 
 Licensed under the [Apache 2.0 License](LICENSE)
 
+---
+
+## Contributions
+
+### The following provided pivital information about unlocks for cross referencing ids on the census api
+
+

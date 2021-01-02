@@ -74,4 +74,21 @@ public class CensusAPIService {
             return null;
         }
     }
+
+    public Long getDirectiveLevel(MessageReceivedEvent event, long charId, long directiveId){
+        try{
+            CloseableHttpClient client = HttpClients.createDefault();
+            HttpPost post = new HttpPost(baseURI + "characters_directive_tree?character_id=" + charId + "&directive_tree_id=" + directiveId + "&c:show=current_level");
+            JsonReader jr = new JsonReader(new InputStreamReader(client.execute(post).getEntity().getContent()));
+            JsonObject je = JsonParser.parseReader(jr).getAsJsonObject();
+            if(je.has("error")){
+                event.getChannel().sendMessage("There was an error in the planetside API: " + je.get("error").toString());
+                return null;
+            }
+            return je.get("current_level").getAsLong();
+        }catch(Exception e){
+            event.getChannel().sendMessage("There was an error in the planetside API: " + e.toString());
+            return null;
+        }
+    }
 }
