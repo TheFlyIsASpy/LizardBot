@@ -52,10 +52,12 @@ public class CommandListener extends ListenerAdapter{
     
     @Override
     public void onMessageReceived(MessageReceivedEvent event){
-        String[] message = event.getMessage().getContentRaw().split(" ");
+        String[] message = event.getMessage().getContentRaw().split("\\s+");
+        if(message[0].contains("789243746344632340")){
+            message[0] = "789243746344632340";
+        }
         switch(message[0]){
-            case "<@789243746344632340>":
-            case "<@!789243746344632340>":
+            case "789243746344632340":
                 if(message.length > 1){
                     switch(message[1].toLowerCase()){
                         case "request":

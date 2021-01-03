@@ -48,6 +48,7 @@ public class SpecializationRequestThread implements Runnable {
 
     private MessageReceivedEvent event;
     private HashSet<Long> ids;
+    private Long charid;
     private String[] requests;
     private String rank = null;
     private String originalNickname;
@@ -236,7 +237,11 @@ public class SpecializationRequestThread implements Runnable {
             return false;
         }
 
-        ids = cas.getIdsByPlayerName(nickname, event);
+        charid = cas.getCharacterId(event, nickname);
+        if(charid == null){
+            return false;
+        }
+        ids = cas.getIdsByPlayerName(charid, event);
         if(ids == null){
             return false;
         }
@@ -294,9 +299,10 @@ public class SpecializationRequestThread implements Runnable {
                 if(firstEntry == -1){
                     checkDouble = true;
                 }else if (firstEntry == -2){
-                    if(!(cas.getDirectiveLevel(event, reqIDItr.next(), reqIDItr.next()) == reqIDItr.next())){
+                    if(!(cas.getDirectiveLevel(event, charid, reqIDItr.next()) >= reqIDItr.next())){
                         missingReqs.add(req.getName());
                     }
+                    continue;
                 }else if(ids.contains(firstEntry)){
                         met = true;
                 }

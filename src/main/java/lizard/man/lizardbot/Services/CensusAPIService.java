@@ -38,10 +38,10 @@ public class CensusAPIService {
     @Value("http://census.daybreakgames.com/s:" + "${census.service.id}" + "/get/ps2:v2/")
     private String baseURI;
 
-    public HashSet<Long> getIdsByPlayerName(String name, MessageReceivedEvent event){
+    public HashSet<Long> getIdsByPlayerName(long id, MessageReceivedEvent event){
 
         CloseableHttpClient client = HttpClients.createDefault();
-        HttpPost post = new HttpPost(baseURI + "character/?name.first_lower=" + name.toLowerCase() + "&c:resolve=item&c:show=character_id");
+        HttpPost post = new HttpPost(baseURI + "character/?character_id=" + id + "&c:resolve=item&c:show=character_id");
 
         try{
             JsonReader jr = new JsonReader(new InputStreamReader(client.execute(post).getEntity().getContent()));
@@ -88,6 +88,37 @@ public class CensusAPIService {
             return je.get("current_level").getAsLong();
         }catch(Exception e){
             event.getChannel().sendMessage("There was an error in the planetside API: " + e.toString());
+            return null;
+        }
+    }
+
+    public Long getCharacterId(MessageReceivedEvent event, String name){
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpPost post = new HttpPost(baseURI + "character/?name.first_lower=" + name.toLowerCase() + "&c:show=character_id");
+
+        try{
+            JsonReader jr = new JsonReader(new InputStreamReader(client.execute(post).getEntity().getContent()));
+            JsonObject je = JsonParser.parseReader(jr).getAsJsonObject();
+            
+            if(je.has("character_list")){
+                JsonArray players = je.getAsJsonArray("character_list");
+                if(players.size() > 0){
+
+                    return players.get(0).getAsJsonObject().get("character_id").getAsLong();
+                }else{
+                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Player does not exsist in the planetside 2 database.\n Make sure your nickname is either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
+                    return null;
+                }
+            }else if(je.has("error")){
+                event.getChannel().sendMessage("There was an error in the planetside API: " + je.get("error").toString());
+                return null;
+            }else{
+                event.getChannel().sendMessage("There was an error in the planetside API:");
+                return null;
+            }
+        }catch(Exception e){
+            System.out.println(e);
+            event.getChannel().sendMessage("There was an error in the planetside API: " + e);
             return null;
         }
     }
