@@ -78,16 +78,16 @@ public class CensusAPIService {
     public Long getDirectiveLevel(MessageReceivedEvent event, long charId, long directiveId){
         try{
             CloseableHttpClient client = HttpClients.createDefault();
-            HttpPost post = new HttpPost(baseURI + "characters_directive_tree?character_id=" + charId + "&directive_tree_id=" + directiveId + "&c:show=current_level");
+            HttpPost post = new HttpPost(baseURI + "characters_directive_tree?character_id=" + charId + "&directive_tree_id=" + directiveId + "&c:show=current_directive_tier_id");
             JsonReader jr = new JsonReader(new InputStreamReader(client.execute(post).getEntity().getContent()));
             JsonObject je = JsonParser.parseReader(jr).getAsJsonObject();
             if(je.has("error")){
-                event.getChannel().sendMessage("There was an error in the planetside API: " + je.get("error").toString());
+                event.getChannel().sendMessage("There was an error in the planetside API: " + je.get("error").toString()).queue();
                 return null;
             }
-            return je.get("current_level").getAsLong();
+            return je.getAsJsonArray("characters_directive_tree_list").get(0).getAsJsonObject().get("current_directive_tier_id").getAsLong();
         }catch(Exception e){
-            event.getChannel().sendMessage("There was an error in the planetside API: " + e.toString());
+            event.getChannel().sendMessage("There was an error in the planetside API: " + e.toString()).queue();
             return null;
         }
     }

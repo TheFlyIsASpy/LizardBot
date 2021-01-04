@@ -32,6 +32,7 @@ import lizard.man.lizardbot.Models.InfiltratorRequirement;
 import lizard.man.lizardbot.Models.LightAssaultRequirement;
 import lizard.man.lizardbot.Models.MaxRequirement;
 import lizard.man.lizardbot.Models.MedicRequirement;
+import lizard.man.lizardbot.Models.ProwlerRequirement;
 import lizard.man.lizardbot.Models.Requirement;
 import lizard.man.lizardbot.Models.TankerRequirement;
 import lizard.man.lizardbot.Services.CensusAPIService;
@@ -85,6 +86,9 @@ public class SpecializationRequestThread implements Runnable {
             eb.addField("Bombardier:", "bomb", true);
             eb.addField("Aircraft Mechanic:", "am", true);
             eb.addField("Tanker:", "tanker", true);
+            eb.addBlankField(false);
+            eb.addField("Advanced Specs:", "", false);
+            eb.addField("Prowler:", "prowler", true);
             eb.addField("Example Response: ", "la fs bomb engi", false);
             event.getChannel().sendMessage(eb.build()).queue();
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Please state the specializations you would like to request in a space seperated list").queue();
@@ -144,6 +148,9 @@ public class SpecializationRequestThread implements Runnable {
                         checkRequirements(ids, "🛠 Tanker", TankerRequirement.class, 
                                 new String[] { "NS-66 Punisher + Adaptive Underbarrel", "Spitfire Cooldown 3"});
                         break;
+                    case "prowler":
+                        checkRequirements(ids, "🚂 Prowler Specialist", ProwlerRequirement.class, null);
+                        break;
                     default:
                         event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + requests[i] + " is not a valid spec.").queue();
                 }
@@ -154,7 +161,7 @@ public class SpecializationRequestThread implements Runnable {
     private boolean processRequest(){
         if(!event.getGuild().getId().equals("691820171240931339")){
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + " The request command is specific to the 2RAF discord").queue();
-            return false;
+            //return false;
         }
         
         HashSet<String> roles = new HashSet<String>(){};
