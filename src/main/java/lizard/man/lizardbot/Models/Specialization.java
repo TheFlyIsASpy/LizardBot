@@ -16,11 +16,12 @@ package lizard.man.lizardbot.Models;
 
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Table;
 
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
@@ -32,33 +33,42 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Entity
-@Table(name = "requirements")
+@Table(name="specializations")
 @TypeDef(
     name = "list",
     typeClass = ListArrayType.class
 )
 @Getter @Setter @NoArgsConstructor
-public class Requirement {
-
-    @Column(name = "requirement")
-    private String name;
-
-    @Type(type = "list")
-    @Column(name = "item_ids", columnDefinition = "bigint[]")
-    private List<Long> ids;
+public class Specialization {
 
     @Id
     @Column(name = "id")
     private long id;
 
-    @ManyToOne
-    @JoinColumn(name="spec_id", referencedColumnName = "id")
-    private Specialization spec;
+    @Column(name = "role")
+    private String role;
 
-    public Requirement(String name, List<Long> ids){
-        this.name = name;
-        this.ids = ids;
+    @Column(name = "command")
+    private String command;
+
+    @Type(type = "list")
+    @Column(name = "manual_requirements")
+    private List<String> manualReqs;
+
+    @OneToMany(targetEntity = Requirement.class, mappedBy = "spec", cascade=CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<Requirement> reqs;
+
+    public Specialization(long id, String role, String command){
+        this.id = id;
+        this.role = role;
+        this.command = command;
+    }
+
+    public Specialization(String role, String command){
+        this.role = role;
+        this.command = command;
+        manualReqs = null;
+        reqs = null;
     }
 }

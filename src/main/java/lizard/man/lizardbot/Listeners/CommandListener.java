@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import lizard.man.lizardbot.Threads.SpecializationRequestThread;
+import lizard.man.lizardbot.repositories.SpecializationsRepository;
 import lizard.man.lizardbot.Services.CensusAPIService;
 import lombok.NoArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -30,15 +31,14 @@ import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-
 @Component
 @NoArgsConstructor
-public class CommandListener extends ListenerAdapter{
-    
+public class CommandListener extends ListenerAdapter {
+
     @Autowired
     private CensusAPIService cas;
     @Autowired
-    private EntityManager entityManager;
+    private SpecializationsRepository sr;
 
     @Autowired 
     private EventWaiter ew;
@@ -61,7 +61,7 @@ public class CommandListener extends ListenerAdapter{
                 if(message.length > 1){
                     switch(message[1].toLowerCase()){
                         case "request":
-                            es.execute(new SpecializationRequestThread(event, cas, ew, entityManager));
+                            es.execute(new SpecializationRequestThread(event, cas, ew, sr));
                             break;
                         case "help":
                             EmbedBuilder eb = new EmbedBuilder();

@@ -15,28 +15,17 @@
 package lizard.man.lizardbot.Threads;
 
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.persistence.EntityManager;
-
-import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
-
+import lizard.man.lizardbot.Interfaces.SpecializationInfoInterface;
 import lizard.man.lizardbot.Listeners.EventWaiter;
-import lizard.man.lizardbot.Models.AircraftMechanicRequirement;
-import lizard.man.lizardbot.Models.BombardierRequirement;
-import lizard.man.lizardbot.Models.EngineerRequirement;
-import lizard.man.lizardbot.Models.FlightSurgeonRequirement;
-import lizard.man.lizardbot.Models.HeavyAssaultRequirement;
-import lizard.man.lizardbot.Models.InfiltratorRequirement;
-import lizard.man.lizardbot.Models.LightAssaultRequirement;
-import lizard.man.lizardbot.Models.MaxRequirement;
-import lizard.man.lizardbot.Models.MedicRequirement;
-import lizard.man.lizardbot.Models.ProwlerRequirement;
 import lizard.man.lizardbot.Models.Requirement;
-import lizard.man.lizardbot.Models.TankerRequirement;
+import lizard.man.lizardbot.Models.Specialization;
 import lizard.man.lizardbot.Services.CensusAPIService;
-
+import lizard.man.lizardbot.repositories.SpecializationsRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -44,7 +33,7 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 
 public class SpecializationRequestThread implements Runnable {
     private CensusAPIService cas;
-    private EntityManager entityManager;
+    private SpecializationsRepository sr;
     private EventWaiter ew;
 
     private MessageReceivedEvent event;
@@ -53,6 +42,7 @@ public class SpecializationRequestThread implements Runnable {
     private String[] requests;
     private String rank = null;
     private String originalNickname;
+
 
     private Runnable threadReference = this;
 
@@ -64,95 +54,64 @@ public class SpecializationRequestThread implements Runnable {
     }
 
     public SpecializationRequestThread(MessageReceivedEvent event, CensusAPIService cas,
-            EventWaiter ew, EntityManager entityManager) {
+            EventWaiter ew, SpecializationsRepository sr) {
         this.event = event;
-        this.entityManager = entityManager;
+        this.sr = sr;
         this.cas = cas;
         this.ew = ew;
     }
 
     public void run() {
         if (processRequest()) {
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("Possible Specializations");
-            eb.setDescription("inputs for each spec");
-            eb.addField("Infiltrator:", "infil", true);
-            eb.addField("Light Assault:", "la", true);
-            eb.addField("Medic:", "medic", true);
-            eb.addField("Engineer:", "engi", true);
-            eb.addField("Heavy Assault:", "heavy", true);
-            eb.addField("Max:", "max", true);
-            eb.addField("Flight Surgeon:", "fs", true);
-            eb.addField("Bombardier:", "bomb", true);
-            eb.addField("Aircraft Mechanic:", "am", true);
-            eb.addField("Tanker:", "tanker", true);
-            eb.addBlankField(false);
-            eb.addField("Advanced Specs:", "", false);
-            eb.addField("Prowler:", "prowler", true);
-            eb.addField("Example Response: ", "la fs bomb engi", false);
-            event.getChannel().sendMessage(eb.build()).queue();
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Please state the specializations you would like to request in a space seperated list").queue();
-            
-            requests = new String[]{};
-            ew.waitForEvent(MessageReceivedEvent.class, e -> e.getAuthor().equals(event.getAuthor()), e -> {
-                requests = e.getMessage().getContentRaw().split(" ");
-                synchronized(threadReference){threadReference.notify();}
-            }, 15, TimeUnit.SECONDS, new Runnable(){
-                public void run(){
-                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Request timed out").queue();
-                    synchronized(threadReference){threadReference.notify();}
+            if(!(event.getMessage().getContentRaw().split(" ").length > 2)){
+                EmbedBuilder eb = new EmbedBuilder();
+                eb.setTitle("Possible Specializations");
+                eb.setDescription("inputs for each spec");
+                Iterator<SpecializationInfoInterface> infoItr = sr.findRoleAndCommand().iterator();
+                while(infoItr.hasNext()){
+                    
+                    SpecializationInfoInterface info = infoItr.next();
+                    eb.addField(info.getRole(), info.getCommand(), false);
                 }
-            });
-            synchronized(threadReference){
-                try{
-                    threadReference.wait();
-                }catch(InterruptedException e){}
+                eb.addField("Example Response: ", "la fs bomb engi liberator", false);
+                event.getChannel().sendMessage(eb.build()).queue();
+                event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Please state the specializations you would like to request in a space seperated list").queue();
+                
+                requests = new String[]{};
+                ew.waitForEvent(MessageReceivedEvent.class, e -> e.getAuthor().equals(event.getAuthor()), e -> {
+                    requests = e.getMessage().getContentRaw().split("\\s+");
+                    synchronized(threadReference){threadReference.notify();}
+                }, 30, TimeUnit.SECONDS, new Runnable(){
+                    public void run(){
+                        event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Request timed out").queue();
+                        synchronized(threadReference){threadReference.notify();}
+                    }
+                });
+                synchronized(threadReference){
+                    try{
+                        threadReference.wait();
+                    }catch(InterruptedException e){}
+                }
+            }else{
+                requests = event.getMessage().getContentRaw().split("\\s+");
+                if(requests.length > 2){
+                    String[] temp = new String[requests.length - 2];
+                    for(int i = 0; i < requests.length - 2; i++){
+                        temp[i] = requests[i+2];
+                    }
+                    requests = temp;
+                }else{
+                    requests = new String[]{};
+                }
+
             }
             
-            for (int i = 0; i < requests.length; i++) {
-                switch (requests[i]) {
-                    case "infil":
-                        checkRequirements(ids, "🗡️ Infiltration Specialist", InfiltratorRequirement.class, null);
-                        break;
-                    case "la":
-                        checkRequirements(ids, "🚀 Light Assault Specialist", LightAssaultRequirement.class,
-                                new String[] { "C-4 x2" });
-                        break;
-                    case "medic":
-                        checkRequirements(ids, "💉 Medical Specialist", MedicRequirement.class,
-                                new String[] { "C-4 x2", "NS-66 Punisher + Adaptive Underbarrel" });
-                        break;
-                    case "engi":
-                        checkRequirements(ids, "🔧	Engineering Specialist", EngineerRequirement.class,
-                                new String[] { "C-4 x2", "Anti-infantry Mana Turret 5" });
-                        break;
-                    case "heavy":
-                        checkRequirements(ids, "🔫	Heavy Assault Specialist", HeavyAssaultRequirement.class,
-                                new String[] { "C-4 x2" });
-                        break;
-                    case "max":
-                        checkRequirements(ids, "📛 MAX Specialist", MaxRequirement.class, null);
-                        break;
-                    case "fs":
-                        checkRequirements(ids, "⚕️ Flight Surgeon", FlightSurgeonRequirement.class, 
-                                new String[] {"Triage 5", "C-4 x2", "NS-66 Punisher + Adaptive Underbarrel"});
-                        break;
-                    case "bomb":
-                        checkRequirements(ids, "💥 Bombardier", BombardierRequirement.class, 
-                                new String[] { "C-4 x2" });
-                        break;
-                    case "am":
-                        checkRequirements(ids, "🧰 Aircraft Mechanic", AircraftMechanicRequirement.class, null);
-                        break;
-                    case "tanker":
-                        checkRequirements(ids, "🛠 Tanker", TankerRequirement.class, 
-                                new String[] { "NS-66 Punisher + Adaptive Underbarrel", "Spitfire Cooldown 3"});
-                        break;
-                    case "prowler":
-                        checkRequirements(ids, "🚂 Prowler Specialist", ProwlerRequirement.class, null);
-                        break;
-                    default:
-                        event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + requests[i] + " is not a valid spec.").queue();
+            for(String r : requests){
+                Specialization spec = sr.findByCommandIgnoreCase(r);
+                if(spec != null){
+                    checkRequirements(spec);
+                }else{
+                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + r + " is not a valid spec.").queue();
                 }
             }
         }
@@ -164,7 +123,7 @@ public class SpecializationRequestThread implements Runnable {
             //return false;
         }
         
-        HashSet<String> roles = new HashSet<String>(){};
+        HashSet<String> roles = new HashSet<String>();
         roles.add("Private First Class");
         roles.add("Specialist");
         roles.add("Lance Corporal");
@@ -228,7 +187,7 @@ public class SpecializationRequestThread implements Runnable {
                 response.setResponse(true);
             }
             synchronized(threadReference){threadReference.notify();}
-        }, 15, TimeUnit.SECONDS, new Runnable(){
+        }, 30, TimeUnit.SECONDS, new Runnable(){
             public void run(){
                 synchronized(threadReference){threadReference.notify();}
             }
@@ -266,7 +225,7 @@ public class SpecializationRequestThread implements Runnable {
                 hasIt.setResponse(true);
             }
             synchronized(threadReference){threadReference.notify();}
-        }, 15, TimeUnit.SECONDS, new Runnable(){
+        }, 30, TimeUnit.SECONDS, new Runnable(){
             public void run(){
                 synchronized(threadReference){threadReference.notify();}
             }
@@ -280,29 +239,37 @@ public class SpecializationRequestThread implements Runnable {
     }
 
     
-    private <T extends Requirement> void checkRequirements(HashSet<Long> ids, String clss, Class<T> type, String[] manualReqs){
-        SimpleJpaRepository<T, Long> repo = new SimpleJpaRepository<T, Long>(type, entityManager);
-        
+    private void checkRequirements(Specialization spec){
+
+
         HashSet<String> missingReqs = new HashSet<String>();
+        List<String> manualReqs = spec.getManualReqs();
         
         if(manualReqs != null){
             for(String s : manualReqs){
-                if(!checkManualRequirement(s, clss)){
+                if(!checkManualRequirement(s, spec.getRole())){
                     missingReqs.add(s);
                 }
             }
         }
-        
-        Iterator<? extends Requirement> reqItr = repo.findAll().iterator();
+
+
+        Hashtable<Requirement, Boolean> groupedRequirements = new Hashtable<Requirement, Boolean>();
+        Iterator<Requirement> reqItr = spec.getReqs().iterator();
         while(reqItr.hasNext()){
             boolean met = false;
             boolean checkDouble = false;
+            long needed = 1;
+            long obtained = 0;
             Requirement req = reqItr.next();
-            
             Iterator<Long> reqIDItr = req.getIds().iterator();
             if(reqIDItr.hasNext()){
                 long firstEntry = reqIDItr.next();
                 
+                if(firstEntry == -4){
+                    firstEntry = reqIDItr.next();
+                    groupedRequirements.put(req, false);
+                }
                 if(firstEntry == -1){
                     checkDouble = true;
                 }else if (firstEntry == -2){
@@ -310,7 +277,9 @@ public class SpecializationRequestThread implements Runnable {
                         missingReqs.add(req.getName());
                     }
                     continue;
-                }else if(ids.contains(firstEntry)){
+                }else if (firstEntry == -3){
+                    needed = reqIDItr.next();
+                }if(ids.contains(firstEntry)){
                         met = true;
                 }
             }
@@ -322,31 +291,54 @@ public class SpecializationRequestThread implements Runnable {
                         break;
                     }
                 }else if(ids.contains(reqIDItr.next())){
-                    met = true;
-                    break;
+                    obtained++;
+                    if(obtained >= needed){
+                        met = true;
+                        if(groupedRequirements.contains(req)){
+                            groupedRequirements.put(req, true);
+                        }
+                        break;  
+                    }
                 }
             }
-            
             if(!met){
                 missingReqs.add(req.getName());
             }
         }
+
+        if(groupedRequirements.size() > 0){
+            boolean met = false;
+            Iterator<Requirement> itr = groupedRequirements.keySet().iterator();
+            String compoundReq = "";
+            while(itr.hasNext()){
+                Requirement req = itr.next();
+                compoundReq = compoundReq + req.getName() + " or ";
+                if(groupedRequirements.get(req)){
+                    met = true;
+                    break;
+                }
+            }
+            compoundReq = compoundReq.replaceAll("or $", "");
+            if(!met){
+                missingReqs.add(compoundReq);
+            }
+        }
         
         if(missingReqs.size() > 0){
-            String msg = " You are missing these requirements for " + clss + ": \n";
+            String msg = " You are missing these requirements for " + spec.getRole() + ": \n";
             
             Iterator<String> itr = missingReqs.iterator();
             while(itr.hasNext()){
-                msg = msg + itr.next() + ", ";
+                msg = msg + itr.next() + ",\n";
             }
             
             msg.strip();
-            msg = msg.replaceAll(", $", "");
-            msg = msg + ".\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api";
+            msg = msg.replaceAll("\n$", "");
+            msg = msg + "\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api";
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + msg).queue();
         }else{
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Congratulations on your achievement of the " + clss + ". You have met the requirements!").queue();
-            event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRolesByName(clss, false).get(0)).queue();
+            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Congratulations on your achievement of the " + spec.getRole() + ". You have met the requirements!").queue();
+            //event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRolesByName(spec.getRole(), false).get(0)).queue();
             if((rank == null || rank.strip().toLowerCase().equals("[6 pfc]")) && event.getMember().getRoles().contains(event.getGuild().getRolesByName("Private First Class", false).get(0))){
                 try{
                     event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRolesByName("Specialist", false).get(0)).queue();
