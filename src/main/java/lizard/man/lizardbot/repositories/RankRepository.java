@@ -14,20 +14,24 @@
 */
 package lizard.man.lizardbot.repositories;
 
-import java.util.List;
+import java.util.HashSet;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import lizard.man.lizardbot.Interfaces.SpecializationInfoInterface;
-import lizard.man.lizardbot.Models.Specialization;
+import lizard.man.lizardbot.Models.Rank;
 
 @Repository
-public interface SpecializationsRepository extends CrudRepository<Specialization, Long>{
+public interface RankRepository extends CrudRepository<Rank, Long>{
 
-    Specialization findByCommandIgnoreCase(String command);
+    @Query("select r from Rank r where r.level = (select max(level) as level from Rank as r2)")
+    Rank findLowestRank();
 
-    @Query("SELECT s.role as role, s.command as command from Specialization s")
-    List<SpecializationInfoInterface> findRoleAndCommand();
+    HashSet<Rank> findAll();
+
+    Rank findByRole(String role);
+
+    boolean existsByRole(String role);
 }
+

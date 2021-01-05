@@ -122,7 +122,7 @@ public class SpecializationRequestThread implements Runnable {
     private boolean processRequest(){
         if(!event.getGuild().getId().equals("691820171240931339")){
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + " The request command is specific to the 2RAF discord").queue();
-            //return false;
+            return false;
         }
         
         HashSet<String> roles = new HashSet<String>();

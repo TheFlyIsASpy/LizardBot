@@ -14,13 +14,15 @@
 */
 package lizard.man.lizardbot.Listeners;
 
-import java.util.concurrent.ExecutorService; 
-import java.util.concurrent.Executors; 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import lizard.man.lizardbot.Threads.PromoteThread;
 import lizard.man.lizardbot.Threads.SpecializationRequestThread;
+import lizard.man.lizardbot.repositories.RankRepository;
 import lizard.man.lizardbot.repositories.SpecializationsRepository;
 import lizard.man.lizardbot.Services.CensusAPIService;
 import lombok.NoArgsConstructor;
@@ -37,6 +39,8 @@ public class CommandListener extends ListenerAdapter {
     private CensusAPIService cas;
     @Autowired
     private SpecializationsRepository sr;
+    @Autowired
+    private RankRepository rr;
 
     @Autowired 
     private EventWaiter ew;
@@ -60,6 +64,9 @@ public class CommandListener extends ListenerAdapter {
                     switch(message[1].toLowerCase()){
                         case "request":
                             es.execute(new SpecializationRequestThread(event, cas, ew, sr));
+                            break;
+                        case "promote":
+                            es.execute(new PromoteThread(event, rr));
                             break;
                         case "help":
                             EmbedBuilder eb = new EmbedBuilder();
