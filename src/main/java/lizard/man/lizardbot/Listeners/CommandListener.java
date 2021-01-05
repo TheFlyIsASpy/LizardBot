@@ -14,8 +14,6 @@
 */
 package lizard.man.lizardbot.Listeners;
 
-import javax.persistence.EntityManager;
-
 import java.util.concurrent.ExecutorService; 
 import java.util.concurrent.Executors; 
 

@@ -64,11 +64,4 @@ public class Specialization {
         this.role = role;
         this.command = command;
     }
-
-    public Specialization(String role, String command){
-        this.role = role;
-        this.command = command;
-        manualReqs = null;
-        reqs = null;
-    }
 }

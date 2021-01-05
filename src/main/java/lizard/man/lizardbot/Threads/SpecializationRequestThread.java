@@ -64,15 +64,17 @@ public class SpecializationRequestThread implements Runnable {
     public void run() {
         if (processRequest()) {
             if(!(event.getMessage().getContentRaw().split(" ").length > 2)){
+
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.setTitle("Possible Specializations");
                 eb.setDescription("inputs for each spec");
+
                 Iterator<SpecializationInfoInterface> infoItr = sr.findRoleAndCommand().iterator();
                 while(infoItr.hasNext()){
-                    
                     SpecializationInfoInterface info = infoItr.next();
                     eb.addField(info.getRole(), info.getCommand(), false);
                 }
+
                 eb.addField("Example Response: ", "la fs bomb engi liberator", false);
                 event.getChannel().sendMessage(eb.build()).queue();
                 event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Please state the specializations you would like to request in a space seperated list").queue();
