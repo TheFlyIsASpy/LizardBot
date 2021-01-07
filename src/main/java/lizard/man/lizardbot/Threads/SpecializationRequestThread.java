@@ -282,7 +282,6 @@ public class SpecializationRequestThread implements Runnable {
             if(reqIDItr.hasNext()){
                 long firstEntry = reqIDItr.next();
                 
-
                 if(firstEntry == -1){
                     checkDouble = true;
                 }else if (firstEntry == -2){
@@ -296,6 +295,11 @@ public class SpecializationRequestThread implements Runnable {
                     checkRanks = true;
                 }else if (firstEntry == -5){
                     if(!cas.checkOutfitTime(charid, reqIDItr.next())){
+                        missingReqs.add(req.getName());
+                    }
+                    continue;
+                }else if (firstEntry == -6){
+                    if(!cas.checkKills(charid, reqIDItr.next())){
                         missingReqs.add(req.getName());
                     }
                     continue;
@@ -344,28 +348,37 @@ public class SpecializationRequestThread implements Runnable {
             msg = msg.replaceAll("\n$", "");
             msg = msg + "\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api";
             privateChannel.sendMessage(author.getAsMention() + msg).queue();
+
         }else{
+
             if(!(spec.getManualReview() == null)){
                 String requirements = "";
                 for(String s : spec.getManualReview()){
                     requirements += s + "\n";
                 }
                 privateChannel.sendMessage("This spec requires manual review for some items, an nco will be in touch").queue();
-                channel.sendMessage(author.getAsMention() + " Requires Manual review for the following items for " + spec.getRole() + " due to lack of info in the api:\n" + requirements
+                channel.sendMessage(author.getAsMention() + " requires manual review for the following items for " + spec.getRole() + " due to lack of info in the api:\n" + requirements
                                                                                 + "an <@&731602908059271310> will get in touch").queue();
                 return;
             }
+
             privateChannel.sendMessage("Congratulations, you have met the requirements for " + spec.getRole()).queue();
             channel.sendMessage(author.getAsMention() + " Congratulations on your achievement of the " + spec.getRole() + ". You have met the requirements!").queue();
+            
             guild.addRoleToMember(member, guild.getRolesByName(spec.getRole(), false).get(0)).queue();
+
             if((rank == null || rank.strip().toLowerCase().equals("[6 pfc]")) && member.getRoles().contains(guild.getRolesByName("Private First Class", false).get(0))){
                 try{
+
                     guild.addRoleToMember(member, guild.getRolesByName("Specialist", false).get(0)).queue();
                     guild.removeRoleFromMember(member, guild.getRolesByName("Private First Class", false).get(0)).queue();
                     member.modifyNickname("[5 Spc] " + originalNickname).queue();
                     channel.sendMessage(author.getAsMention() + " Congratulations on your promotion to specialist!").queue();
+
                 }catch(HierarchyException e){
+
                     channel.sendMessage(author.getAsMention() + " There was an error processing your promotion from PFC (possibly with my permissions)\n Contact an officer for manual promotion").queue();
+                
                 }
             }
         }

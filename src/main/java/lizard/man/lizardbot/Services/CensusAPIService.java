@@ -159,4 +159,41 @@ public class CensusAPIService {
             return null;
         }
     }
+
+    public Boolean checkKills(long id, long reqKills){
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpPost post = new HttpPost(baseURI + "character/?character_id=" + id + "&c:resolve=stat_by_faction");
+        try{
+            JsonReader jr = new JsonReader(new InputStreamReader(client.execute(post).getEntity().getContent()));
+            JsonObject je = JsonParser.parseReader(jr).getAsJsonObject();
+            
+            if(je.has("character_list")){
+                JsonArray players = je.getAsJsonArray("character_list");
+                if(players.size() > 0){
+                    JsonArray stats = players.get(0).getAsJsonObject().get("stats").getAsJsonObject().get("stat_by_faction").getAsJsonArray();
+                    long kills = 0;
+                    for(int i = 0; i < stats.size(); i++){
+                        if(stats.get(i).getAsJsonObject().get("stat_name").getAsString().equals("weapon_kills")){
+                            kills = kills + stats.get(i).getAsJsonObject().get("value_forever_vs").getAsLong();
+                            kills = kills + stats.get(i).getAsJsonObject().get("value_forever_nc").getAsLong();
+                        }
+                    }
+                    if(kills >= reqKills){
+                        return true;
+                    }else{
+                        return false;
+                    } 
+                }else{
+                    return null;
+                }
+            }else if(je.has("error")){
+                return null;
+            }else{
+                return null;
+            }
+        }catch(Exception e){
+            System.out.println(e);
+            return null;
+        }
+    }
 }
