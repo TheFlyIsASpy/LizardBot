@@ -49,11 +49,6 @@ public class PromoteThread implements Runnable {
     public void run(){
         if(processRequest()){
             try{
-<<<<<<< HEAD
-                event.getGuild().addRoleToMember(member, event.getGuild().getRolesByName(lowestRank.getRole(), false).get(0)).queue();
-                member.modifyNickname(lowestRank.getNametag() + " " + member.getEffectiveName()).queue();
-                event.getChannel().sendMessage(member.getAsMention() + " Congratulations on your promotion to PFC!").queue();
-=======
                 guild.addRoleToMember(recipient, guild.getRolesByName(lowestRank.getRole(), false).get(0)).queue();
                 if(recipient.getRoles().contains(guild.getRolesByName("Member", false).get(0))){
                     guild.removeRoleFromMember(recipient, guild.getRolesByName("Member", false).get(0)).queue();
@@ -75,7 +70,6 @@ public class PromoteThread implements Runnable {
                 name = name.substring(startIndex);
                 recipient.modifyNickname(lowestRank.getNametag() + name).queue();
                 channel.sendMessage(recipient.getAsMention() + " Congratulations on your promotion to PFC!").queue();
->>>>>>> 33c20b6 (ok i did alot, heavily optimised command threads and made correspondance happen in dms, fixed ALL of the specs, fixed promote command, changed some db stuff, and more)
             }catch(HierarchyException e){
                 channel.sendMessage(author.getAsMention() + " The recipient has too high permissions for me to edit them").queue();
             }
@@ -83,15 +77,9 @@ public class PromoteThread implements Runnable {
     }
 
     private boolean processRequest(){
-<<<<<<< HEAD
-        if(!event.getGuild().getId().equals("691820171240931339")){
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " The promote command is specific to the 2RAF discord").queue();
-            //return false;
-=======
         if(!guild.getId().equals("691820171240931339")){
             channel.sendMessage(author.getAsMention() + " The promote command is specific to the 2RAF discord").queue();
             return false;
->>>>>>> 33c20b6 (ok i did alot, heavily optimised command threads and made correspondance happen in dms, fixed ALL of the specs, fixed promote command, changed some db stuff, and more)
         }
         if(!(eventMember.getRoles().contains(guild.getRolesByName("Mentor", false).get(0)))){
             channel.sendMessage(author.getAsMention() + " You must be a mentor to use this command. If you are an officer, stop hogging the bot").queue();

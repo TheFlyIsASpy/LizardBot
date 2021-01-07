@@ -345,11 +345,6 @@ public class SpecializationRequestThread implements Runnable {
             msg = msg + "\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api";
             privateChannel.sendMessage(author.getAsMention() + msg).queue();
         }else{
-<<<<<<< HEAD
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Congratulations on your achievement of the " + spec.getRole() + ". You have met the requirements!").queue();
-            //event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRolesByName(spec.getRole(), false).get(0)).queue();
-            if((rank == null || rank.strip().toLowerCase().equals("[6 pfc]")) && event.getMember().getRoles().contains(event.getGuild().getRolesByName("Private First Class", false).get(0))){
-=======
             if(!(spec.getManualReview() == null)){
                 String requirements = "";
                 for(String s : spec.getManualReview()){
@@ -364,7 +359,6 @@ public class SpecializationRequestThread implements Runnable {
             channel.sendMessage(author.getAsMention() + " Congratulations on your achievement of the " + spec.getRole() + ". You have met the requirements!").queue();
             guild.addRoleToMember(member, guild.getRolesByName(spec.getRole(), false).get(0)).queue();
             if((rank == null || rank.strip().toLowerCase().equals("[6 pfc]")) && member.getRoles().contains(guild.getRolesByName("Private First Class", false).get(0))){
->>>>>>> 33c20b6 (ok i did alot, heavily optimised command threads and made correspondance happen in dms, fixed ALL of the specs, fixed promote command, changed some db stuff, and more)
                 try{
                     guild.addRoleToMember(member, guild.getRolesByName("Specialist", false).get(0)).queue();
                     guild.removeRoleFromMember(member, guild.getRolesByName("Private First Class", false).get(0)).queue();
