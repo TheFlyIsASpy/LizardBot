@@ -33,5 +33,7 @@ public interface RankRepository extends CrudRepository<Rank, Long>{
     Rank findByRole(String role);
 
     boolean existsByRole(String role);
+
+    Rank findByLevel(long level);
 }
 

@@ -14,10 +14,15 @@
 */
 package lizard.man.lizardbot.Threads;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import javax.imageio.ImageIO;
+import javax.swing.RepaintManager;
 
 import lizard.man.lizardbot.Bots.LizardBot;
 import lizard.man.lizardbot.Interfaces.SpecializationInfoInterface;
@@ -52,6 +57,7 @@ public class SpecializationRequestThread implements Runnable {
     private Long charid;
     private String[] requests;
     private String rank = null;
+    private long rankLevel;
     private String originalNickname;
 
     // event storage
@@ -67,7 +73,11 @@ public class SpecializationRequestThread implements Runnable {
 
     private class Bool{ 
         private boolean response = false;
+        private boolean timeout = false;
         public void setResponse(boolean response){
+            this.response = response;
+        }
+        public void setTimeout(boolean response){
             this.response = response;
         }
     }
@@ -135,6 +145,12 @@ public class SpecializationRequestThread implements Runnable {
             for(String r : requests){
                 Specialization spec = sr.findByCommandIgnoreCase(r);
                 if(spec != null){
+                    if(!spec.getType().equals("b")){
+                        if(rankLevel > rr.findLowestRank().getLevel() - 1){
+                            privateChannel.sendMessage(author.getAsMention() + " You must be rank " + rr.findByLevel(rr.findLowestRank().getLevel() - 1).getRole() + " or higher to request an advanced spec.").queue();
+                            continue;
+                        }
+                    }
                     checkRequirements(spec);
                 }else{
                     privateChannel.sendMessage(author.getAsMention() + " " + r + " is not a valid spec. use <@789243746344632340> request to see all specs").queue();
@@ -152,10 +168,15 @@ public class SpecializationRequestThread implements Runnable {
 
         boolean hasRank = false;
         Rank lowestRank = rr.findLowestRank();
+        rankLevel = lowestRank.getLevel() + 1;
         for(Role r : member.getRoles()){
             if(rr.existsByRole(r.getName())){
-                if(rr.findByRole(r.getName()).getLevel() <= lowestRank.getLevel()){
+                long roleLevel = rr.findByRole(r.getName()).getLevel();
+                if(roleLevel <= lowestRank.getLevel()){
                     hasRank = true;
+                    if(roleLevel < rankLevel){
+                        rankLevel = roleLevel;
+                    }
                 }
             }
         }
@@ -205,6 +226,7 @@ public class SpecializationRequestThread implements Runnable {
             synchronized(threadReference){threadReference.notify();}
         }, 30, TimeUnit.SECONDS, new Runnable(){
             public void run(){
+                response.setTimeout(true);
                 synchronized(threadReference){threadReference.notify();}
             }
         });
@@ -212,6 +234,11 @@ public class SpecializationRequestThread implements Runnable {
             try{
                 threadReference.wait();
             }catch(InterruptedException e){}
+        }
+
+        if(response.timeout){
+            privateChannel.sendMessage("Request Timed Out").queue();
+            return false;
         }
 
         if(!response.response){
@@ -232,17 +259,19 @@ public class SpecializationRequestThread implements Runnable {
     }
 
     private boolean checkManualRequirement(String name, String clss){
-        Bool hasIt = new Bool();
+        
         
         privateChannel.sendMessage(author.getAsMention() + " Do you have " + name + " unlocked for "+ clss + "? yes/no (default no in 15 seconds)").queue();
-        
+
+        Bool response = new Bool();
         ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author) && e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("no"), e -> {
             if(e.getMessage().getContentRaw().strip().toLowerCase().equals("yes")){
-                hasIt.setResponse(true);
+                response.setResponse(true);
             }
             synchronized(threadReference){threadReference.notify();}
         }, 30, TimeUnit.SECONDS, new Runnable(){
             public void run(){
+                response.setTimeout(true);
                 synchronized(threadReference){threadReference.notify();}
             }
         });
@@ -251,7 +280,13 @@ public class SpecializationRequestThread implements Runnable {
                 threadReference.wait();
             }catch(InterruptedException e){}
         }
-        return hasIt.response;
+
+        if(response.timeout){
+            privateChannel.sendMessage("Request Timed Out").queue();
+            return false;
+        }
+
+        return response.response;
     }
 
     
@@ -362,23 +397,71 @@ public class SpecializationRequestThread implements Runnable {
                 return;
             }
 
+            guild.addRoleToMember(member, guild.getRolesByName(spec.getRole(), false).get(0)).queue();
             privateChannel.sendMessage("Congratulations, you have met the requirements for " + spec.getRole()).queue();
             channel.sendMessage(author.getAsMention() + " Congratulations on your achievement of the " + spec.getRole() + ". You have met the requirements!").queue();
             
-            guild.addRoleToMember(member, guild.getRolesByName(spec.getRole(), false).get(0)).queue();
+            Rank previousRank = rr.findLowestRank();
 
-            if((rank == null || rank.strip().toLowerCase().equals("[6 pfc]")) && member.getRoles().contains(guild.getRolesByName("Private First Class", false).get(0))){
+            if(spec.getType().equals("s")){
+
+                reqItr = spec.getReqs().iterator();
+                while(reqItr.hasNext()){
+                    Requirement tempReq = reqItr.next();
+                    if(tempReq.getIds().get(0) == -4){
+                        guild.removeRoleFromMember(member, guild.getRolesByName(sr.findRoleAndCommandBySpecid(tempReq.getIds().get(1)).getRole(), false).get(0)).queue();
+                    }
+                }
+                
+                if(rankLevel <= previousRank.getLevel() - 2){
+                    return;
+                }
+
+                File f = new File("src/main/resources/Outfit_Resource_rules.png");
+                privateChannel.sendFile(f, "Outfit_Resource_rules.png").queue();
+                privateChannel.sendMessage("Do you agree to the rules above for promotion to" + rr.findByLevel(previousRank.getLevel() - 2).getRole() + "?").queue();
+                Bool response = new Bool();
+                ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author) && e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("no"), e -> {
+                    if(e.getMessage().getContentRaw().strip().toLowerCase().equals("yes")){
+                        response.setResponse(true);
+                    }
+                    synchronized(threadReference){threadReference.notify();}
+                }, 60, TimeUnit.SECONDS, new Runnable(){
+                    public void run(){
+                        response.setTimeout(true);
+                        synchronized(threadReference){threadReference.notify();}
+                    }
+                });
+                synchronized(threadReference){
+                    try{
+                        threadReference.wait();
+                    }catch(InterruptedException e){}
+                }
+
+                if(response.timeout){
+                    privateChannel.sendMessage("Request Timed Out").queue();
+                    return;
+                }
+
+                if(!response.response){
+                    privateChannel.sendMessage("You must agree to the above rules to recieve the promotion to " + rr.findByLevel(previousRank.getLevel() - 2).getRole()).queue();
+                    return;
+                }
+
+                previousRank = rr.findByLevel(previousRank.getLevel() - 1);
+            }
+
+            Rank nextRank = rr.findByLevel(previousRank.getLevel() - 1);
+            if((rank == null || rank.strip().toLowerCase().equals(previousRank.getNametag().toLowerCase().strip())) && member.getRoles().contains(guild.getRolesByName(previousRank.getRole(), false).get(0))){
                 try{
-
-                    guild.addRoleToMember(member, guild.getRolesByName("Specialist", false).get(0)).queue();
-                    guild.removeRoleFromMember(member, guild.getRolesByName("Private First Class", false).get(0)).queue();
-                    member.modifyNickname("[5 Spc] " + originalNickname).queue();
-                    channel.sendMessage(author.getAsMention() + " Congratulations on your promotion to specialist!").queue();
+                    
+                    guild.addRoleToMember(member, guild.getRolesByName(nextRank.getRole(), false).get(0)).queue();
+                    guild.removeRoleFromMember(member, guild.getRolesByName(previousRank.getRole(), false).get(0)).queue();
+                    member.modifyNickname(nextRank.getNametag() + originalNickname).queue();
+                    guild.getTextChannelById("692285236263780352").sendMessage(author.getAsMention() + " Congratulations on your promotion to " + nextRank.getRole()).queue();
 
                 }catch(HierarchyException e){
-
-                    channel.sendMessage(author.getAsMention() + " There was an error processing your promotion from PFC (possibly with my permissions)\n Contact an officer for manual promotion").queue();
-                
+                    channel.sendMessage(author.getAsMention() + " There was an error processing your promotion to " + nextRank.getRole() + "(possibly with my permissions)\n Contact an officer for manual promotion").queue();
                 }
             }
         }
