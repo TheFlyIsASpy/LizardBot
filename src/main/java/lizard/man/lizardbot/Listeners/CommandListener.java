@@ -57,12 +57,9 @@ public class CommandListener extends ListenerAdapter {
                 if(message.length > 1){
                     switch(message[1].toLowerCase()){
                         case "request":
-                            /*
-                            if(!event.getChannel().getId().equals("692293569716944906")){
-                                event.getMessage().getChannel().sendMessage(event.getAuthor().getAsMention() + "The request command is being reworked at the moment").queue();
+                            if(!event.getChannel().getId().equals("705629800357691473")){
                                 return;
                             }
-                            */
                             es.execute(new SpecializationRequestThread(event, bot));
                             break;
                         case "promote":
