@@ -28,6 +28,9 @@ public interface SpecializationsRepository extends CrudRepository<Specialization
 
     Specialization findByCommandIgnoreCase(String command);
 
-    @Query("SELECT s.role as role, s.command as command from Specialization s")
+    @Query("SELECT s.role as role, s.command as command from Specialization s order by s.order asc")
     List<SpecializationInfoInterface> findRoleAndCommand();
+
+    SpecializationInfoInterface findRoleAndCommandBySpecid(long specid);
+    
 }

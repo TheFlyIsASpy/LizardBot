@@ -54,7 +54,7 @@ public class Requirement {
     private long id;
 
     @ManyToOne
-    @JoinColumn(name="spec_id", referencedColumnName = "id")
+    @JoinColumn(name="specid", referencedColumnName = "specid")
     private Specialization spec;
 
     public Requirement(String name, List<Long> ids){

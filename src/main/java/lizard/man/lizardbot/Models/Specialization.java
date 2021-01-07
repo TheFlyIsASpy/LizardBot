@@ -43,8 +43,8 @@ import lombok.Setter;
 public class Specialization {
 
     @Id
-    @Column(name = "id")
-    private long id;
+    @Column(name = "specid")
+    private long specid;
 
     @Column(name = "role")
     private String role;
@@ -53,15 +53,26 @@ public class Specialization {
     private String command;
 
     @Type(type = "list")
-    @Column(name = "manual_requirements")
+    @Column(name = "manual_checks")
     private List<String> manualReqs;
+
+    @Column(name = "order")
+    private long order;
+
+    @Column(name = "type")
+    private String type;
+
+    @Type(type = "list")
+    @Column(name = "manual_review")
+    private List<String> manualReview;
 
     @OneToMany(targetEntity = Requirement.class, mappedBy = "spec", cascade=CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Requirement> reqs;
 
-    public Specialization(long id, String role, String command){
-        this.id = id;
+    public Specialization(long specid, String role, String command, String type){
+        this.specid = specid;
         this.role = role;
         this.command = command;
+        this.type = type;
     }
 }

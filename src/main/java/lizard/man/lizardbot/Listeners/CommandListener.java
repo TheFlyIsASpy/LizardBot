@@ -22,13 +22,13 @@ import org.springframework.stereotype.Component;
 
 import lizard.man.lizardbot.Threads.PromoteThread;
 import lizard.man.lizardbot.Threads.SpecializationRequestThread;
-import lizard.man.lizardbot.repositories.RankRepository;
-import lizard.man.lizardbot.repositories.SpecializationsRepository;
-import lizard.man.lizardbot.Services.CensusAPIService;
+import lizard.man.lizardbot.Bots.LizardBot;
+
 import lombok.NoArgsConstructor;
+
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.ReadyEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 @Component
@@ -36,24 +36,18 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 public class CommandListener extends ListenerAdapter {
 
     @Autowired
-    private CensusAPIService cas;
-    @Autowired
-    private SpecializationsRepository sr;
-    @Autowired
-    private RankRepository rr;
-
-    @Autowired 
-    private EventWaiter ew;
-
-    private ExecutorService es = Executors.newCachedThreadPool();
+    private LizardBot bot;
+    
+    private ExecutorService es = Executors.newScheduledThreadPool(20);
+    
 
     @Override
     public void onReady(ReadyEvent event){
         System.out.println("*Flicks Tongue*");
     }
-    
+
     @Override
-    public void onMessageReceived(MessageReceivedEvent event){
+    public void onGuildMessageReceived(GuildMessageReceivedEvent event){
         String[] message = event.getMessage().getContentRaw().split("\\s+");
         if(message[0].contains("789243746344632340")){
             message[0] = "789243746344632340";
@@ -63,10 +57,14 @@ public class CommandListener extends ListenerAdapter {
                 if(message.length > 1){
                     switch(message[1].toLowerCase()){
                         case "request":
-                            es.execute(new SpecializationRequestThread(event, cas, ew, sr));
+                            if(!event.getChannel().getId().equals("692293569716944906")){
+                                event.getMessage().getChannel().sendMessage(event.getAuthor().getAsMention() + "The request command is being reworked at the moment").queue();
+                                return;
+                            }
+                            es.execute(new SpecializationRequestThread(event, bot));
                             break;
                         case "promote":
-                            es.execute(new PromoteThread(event, rr));
+                            es.execute(new PromoteThread(event, bot));
                             break;
                         case "help":
                             EmbedBuilder eb = new EmbedBuilder();

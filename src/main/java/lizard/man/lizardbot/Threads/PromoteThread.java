@@ -14,76 +14,118 @@
 */
 package lizard.man.lizardbot.Threads;
 
+import lizard.man.lizardbot.Bots.LizardBot;
 import lizard.man.lizardbot.Models.Rank;
 import lizard.man.lizardbot.repositories.RankRepository;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 
-public class PromoteThread implements Runnable{
-    
-    private MessageReceivedEvent event;
+public class PromoteThread implements Runnable {
+
     private RankRepository rr;
 
-    private Member member;
+    private Member eventMember;
+    private Member recipient;
+    private User author;
+    private Guild guild;
+    private Message message;
+    private MessageChannel channel;
     private Rank lowestRank;
 
-    public PromoteThread(MessageReceivedEvent event, RankRepository rr){
-        this.event = event;
-        this.rr = rr;
+    public PromoteThread(GuildMessageReceivedEvent event, LizardBot bot) {
+        this.author = event.getAuthor();
+        this.eventMember = event.getMember();
+        this.guild = event.getGuild();
+        this.message = event.getMessage();
+        this.rr = bot.getRr();
     }
     
     public void run(){
         if(processRequest()){
             try{
+<<<<<<< HEAD
                 event.getGuild().addRoleToMember(member, event.getGuild().getRolesByName(lowestRank.getRole(), false).get(0)).queue();
                 member.modifyNickname(lowestRank.getNametag() + " " + member.getEffectiveName()).queue();
                 event.getChannel().sendMessage(member.getAsMention() + " Congratulations on your promotion to PFC!").queue();
+=======
+                guild.addRoleToMember(recipient, guild.getRolesByName(lowestRank.getRole(), false).get(0)).queue();
+                if(recipient.getRoles().contains(guild.getRolesByName("Member", false).get(0))){
+                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Member", false).get(0)).queue();
+                }
+                String name = recipient.getEffectiveName().strip();
+                int startIndex = 0;
+                if(name.substring(0,1).equals("[")){
+                    for(int i = 0; i < name.length(); i++){
+                        if(name.substring(i, i+1).equals("]")){
+                            startIndex = i+1;
+                            break;
+                        }
+                    }
+                    if(startIndex == 0){
+                        channel.sendMessage(author.getAsMention() + " Recipient has arbitrary [] please rename them").queue();
+                        return;
+                    }
+                }
+                name = name.substring(startIndex);
+                recipient.modifyNickname(lowestRank.getNametag() + name).queue();
+                channel.sendMessage(recipient.getAsMention() + " Congratulations on your promotion to PFC!").queue();
+>>>>>>> 33c20b6 (ok i did alot, heavily optimised command threads and made correspondance happen in dms, fixed ALL of the specs, fixed promote command, changed some db stuff, and more)
             }catch(HierarchyException e){
-                event.getChannel().sendMessage(event.getAuthor().getAsMention() + " The recipient has too high permissions for me to edit them").queue();
+                channel.sendMessage(author.getAsMention() + " The recipient has too high permissions for me to edit them").queue();
             }
         }
     }
 
     private boolean processRequest(){
+<<<<<<< HEAD
         if(!event.getGuild().getId().equals("691820171240931339")){
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + " The promote command is specific to the 2RAF discord").queue();
             //return false;
+=======
+        if(!guild.getId().equals("691820171240931339")){
+            channel.sendMessage(author.getAsMention() + " The promote command is specific to the 2RAF discord").queue();
+            return false;
+>>>>>>> 33c20b6 (ok i did alot, heavily optimised command threads and made correspondance happen in dms, fixed ALL of the specs, fixed promote command, changed some db stuff, and more)
         }
-        if(!(event.getMember().getRoles().contains(event.getGuild().getRolesByName("Mentor", false).get(0)))){
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " You must be a mentor to use this command. If you are an officer, stop hogging the bot").queue();
+        if(!(eventMember.getRoles().contains(guild.getRolesByName("Mentor", false).get(0)))){
+            channel.sendMessage(author.getAsMention() + " You must be a mentor to use this command. If you are an officer, stop hogging the bot").queue();
             return false;
         }
 
-        String[] request = event.getMessage().getContentRaw().split(" ");
+        String[] request = message.getContentRaw().split(" ");
         if(!(request.length > 2)){
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Usage: <@789243746344632340> promote @recipient").queue();
+            channel.sendMessage(author.getAsMention() + " Usage: <@789243746344632340> promote @recipient").queue();
             return false;
         }
 
-        String recipient = request[2];
+        String id = request[2];
 
         if(request[2].substring(0, 1).equals("<")){
             String characterFilter = "[^\\p{L}\\p{N}]";
-            recipient = request[2].replaceAll(characterFilter, "");
+            id = request[2].replaceAll(characterFilter, "");
         }else{
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Usage: <@789243746344632340> promote @recipient").queue();
+            channel.sendMessage(author.getAsMention() + " Usage: <@789243746344632340> promote @recipient").queue();
             return false;
         }
 
-        member = event.getGuild().getMemberById(recipient);
+        recipient = guild.getMemberById(id);
 
-        if(member == null){
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + request[2] + " does not exist or is not in the server").queue();
+        if(recipient == null){
+            channel.sendMessage(author.getAsMention() + " " + request[2] + " does not exist or is not in the server").queue();
             return false;
         }
         
         lowestRank = rr.findLowestRank();
-        for(Role r : member.getRoles()){
+        for(Role r : recipient.getRoles()){
             if(rr.existsByRole(r.getName())){
                 if(rr.findByRole(r.getName()).getLevel() <= lowestRank.getLevel()){
-                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Recipient is already pfc or higher").queue();
+                    channel.sendMessage(author.getAsMention() + " Recipient is already pfc or higher").queue();
                     return false;
                 }
             }

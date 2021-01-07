@@ -15,33 +15,52 @@
 package lizard.man.lizardbot.Threads;
 
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import lizard.man.lizardbot.Bots.LizardBot;
 import lizard.man.lizardbot.Interfaces.SpecializationInfoInterface;
 import lizard.man.lizardbot.Listeners.EventWaiter;
+import lizard.man.lizardbot.Models.Rank;
 import lizard.man.lizardbot.Models.Requirement;
 import lizard.man.lizardbot.Models.Specialization;
 import lizard.man.lizardbot.Services.CensusAPIService;
+import lizard.man.lizardbot.repositories.RankRepository;
 import lizard.man.lizardbot.repositories.SpecializationsRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.PrivateChannel;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 
 public class SpecializationRequestThread implements Runnable {
+    // services
     private CensusAPIService cas;
     private SpecializationsRepository sr;
+    private RankRepository rr;
     private EventWaiter ew;
 
-    private MessageReceivedEvent event;
+    // request storage
     private HashSet<Long> ids;
     private Long charid;
     private String[] requests;
     private String rank = null;
     private String originalNickname;
+
+    // event storage
+    private Message message;
+    private MessageChannel channel;
+    private PrivateChannel privateChannel;
+    private Member member;
+    private User author;
+    private Guild guild;
 
 
     private Runnable threadReference = this;
@@ -53,17 +72,22 @@ public class SpecializationRequestThread implements Runnable {
         }
     }
 
-    public SpecializationRequestThread(MessageReceivedEvent event, CensusAPIService cas,
-            EventWaiter ew, SpecializationsRepository sr) {
-        this.event = event;
-        this.sr = sr;
-        this.cas = cas;
-        this.ew = ew;
+    public SpecializationRequestThread(GuildMessageReceivedEvent event, LizardBot bot){
+        this.message = event.getMessage();
+        this.channel = event.getChannel();
+        this.member = event.getMember();
+        this.author = event.getAuthor();
+        this.guild = event.getGuild();
+        this.privateChannel = author.openPrivateChannel().complete();
+        this.sr = bot.getSr();
+        this.cas = bot.getCas();
+        this.ew = bot.getEw();
+        this.rr = bot.getRr();
     }
 
     public void run() {
         if (processRequest()) {
-            if(!(event.getMessage().getContentRaw().split(" ").length > 2)){
+            if(!(message.getContentRaw().split(" ").length > 2)){
 
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.setTitle("Possible Specializations");
@@ -72,20 +96,20 @@ public class SpecializationRequestThread implements Runnable {
                 Iterator<SpecializationInfoInterface> infoItr = sr.findRoleAndCommand().iterator();
                 while(infoItr.hasNext()){
                     SpecializationInfoInterface info = infoItr.next();
-                    eb.addField(info.getRole(), info.getCommand(), false);
+                    eb.addField(info.getRole() + ":", info.getCommand(), true);
                 }
 
                 eb.addField("Example Response: ", "la fs bomb engi liberator", false);
-                event.getChannel().sendMessage(eb.build()).queue();
-                event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Please state the specializations you would like to request in a space seperated list").queue();
+                privateChannel.sendMessage(eb.build()).queue();
+                privateChannel.sendMessage(author.getAsMention() + " Please state the specializations you would like to request in a space seperated list").queue();
                 
                 requests = new String[]{};
-                ew.waitForEvent(MessageReceivedEvent.class, e -> e.getAuthor().equals(event.getAuthor()), e -> {
+                ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author), e -> {
                     requests = e.getMessage().getContentRaw().split("\\s+");
                     synchronized(threadReference){threadReference.notify();}
                 }, 30, TimeUnit.SECONDS, new Runnable(){
                     public void run(){
-                        event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Request timed out").queue();
+                        privateChannel.sendMessage(author.getAsMention() + " Request timed out").queue();
                         synchronized(threadReference){threadReference.notify();}
                     }
                 });
@@ -95,7 +119,7 @@ public class SpecializationRequestThread implements Runnable {
                     }catch(InterruptedException e){}
                 }
             }else{
-                requests = event.getMessage().getContentRaw().split("\\s+");
+                requests = message.getContentRaw().split("\\s+");
                 if(requests.length > 2){
                     String[] temp = new String[requests.length - 2];
                     for(int i = 0; i < requests.length - 2; i++){
@@ -113,47 +137,35 @@ public class SpecializationRequestThread implements Runnable {
                 if(spec != null){
                     checkRequirements(spec);
                 }else{
-                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + " " + r + " is not a valid spec.").queue();
+                    privateChannel.sendMessage(author.getAsMention() + " " + r + " is not a valid spec. use <@789243746344632340> request to see all specs").queue();
                 }
             }
         }
+        privateChannel.close();
     }
 
     private boolean processRequest(){
-        if(!event.getGuild().getId().equals("691820171240931339")){
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " The request command is specific to the 2RAF discord").queue();
+        if(!guild.getId().equals("691820171240931339")){
+            channel.sendMessage(author.getAsMention() + " The request command is specific to the 2RAF discord").queue();
             return false;
         }
-        
-        HashSet<String> roles = new HashSet<String>();
-        roles.add("Private First Class");
-        roles.add("Specialist");
-        roles.add("Lance Corporal");
-        roles.add("Corporal");
-        roles.add("Sergeant");
-        roles.add("Lieutenant");
-        roles.add("Captain");
-        
+
         boolean hasRank = false;
-        for(Role r : event.getMember().getRoles()){
-            if(roles.contains(r.getName())){
-                hasRank = true;
-                break;
+        Rank lowestRank = rr.findLowestRank();
+        for(Role r : member.getRoles()){
+            if(rr.existsByRole(r.getName())){
+                if(rr.findByRole(r.getName()).getLevel() <= lowestRank.getLevel()){
+                    hasRank = true;
+                }
             }
         }
         
         if(!hasRank){
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + "You must be atleast PFC to use this command. Contact an officer if this is a mistake.").queue();
+            channel.sendMessage(author.getAsMention() + "You must be atleast PFC to use this command. Contact an officer if this is a mistake.").queue();
             return false;
         }
         
-        String nickname = event.getMember().getNickname();
-        
-        if(nickname == null){
-            nickname = event.getAuthor().getName();
-        }else{
-            nickname = nickname.strip();
-        }
+        String nickname = member.getEffectiveName();
         
         if(nickname.charAt(0) == '['){
             String[] nicknameArray = null;
@@ -162,7 +174,7 @@ public class SpecializationRequestThread implements Runnable {
                     nicknameArray = new String[]{nickname.substring(0, i+1).strip(), nickname.substring(i+1, nickname.length()).strip().split(" ")[0]};
                     break;
                 }else if(i == nickname.length() - 1){
-                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + "Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
+                    privateChannel.sendMessage(author.getAsMention() + "Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
                     return false;
                 }
             }
@@ -170,7 +182,7 @@ public class SpecializationRequestThread implements Runnable {
             if(nicknameArray != null){
                 rank = nicknameArray[0].strip();
             }else{
-                event.getChannel().sendMessage(event.getAuthor().getAsMention() + "Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
+                privateChannel.sendMessage(author.getAsMention() + "Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
                 return false;
             }
             
@@ -182,9 +194,11 @@ public class SpecializationRequestThread implements Runnable {
         String characterFilter = "[^\\p{L}\\p{N}]";
         nickname = nickname.replaceAll(characterFilter, "");
 
+        channel.sendMessage(author.getAsMention() + "Request started in dms").queue();
+
         Bool response = new Bool();
-        event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Requesting using character: " + nickname + ". Is this your ingame name? yes/no (default no in 15 seconds)").queue();
-        ew.waitForEvent(MessageReceivedEvent.class, e -> e.getAuthor().equals(event.getAuthor()) && e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("no"), e -> {
+        privateChannel.sendMessage(author.getAsMention() + " Requesting using character: " + nickname + ". Is this your ingame name? yes/no (default no in 15 seconds)").queue();
+        ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author) && e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("no"), e -> {
             if(e.getMessage().getContentRaw().strip().toLowerCase().equals("yes")){
                 response.setResponse(true);
             }
@@ -201,15 +215,15 @@ public class SpecializationRequestThread implements Runnable {
         }
 
         if(!response.response){
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + " You must set your nickname to to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
+            privateChannel.sendMessage(author.getAsMention() + " You must set your nickname to to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
             return false;
         }
 
-        charid = cas.getCharacterId(event, nickname);
+        charid = cas.getCharacterId(privateChannel, author, nickname);
         if(charid == null){
             return false;
         }
-        ids = cas.getIdsByPlayerName(charid, event);
+        ids = cas.getIdsByPlayerName(charid, privateChannel, author);
         if(ids == null){
             return false;
         }
@@ -220,9 +234,9 @@ public class SpecializationRequestThread implements Runnable {
     private boolean checkManualRequirement(String name, String clss){
         Bool hasIt = new Bool();
         
-        event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Do you have " + name + " unlocked for "+ clss + "? yes/no (default no in 15 seconds)").queue();
+        privateChannel.sendMessage(author.getAsMention() + " Do you have " + name + " unlocked for "+ clss + "? yes/no (default no in 15 seconds)").queue();
         
-        ew.waitForEvent(MessageReceivedEvent.class, e -> e.getAuthor().equals(event.getAuthor()) && e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("no"), e -> {
+        ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author) && e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("no"), e -> {
             if(e.getMessage().getContentRaw().strip().toLowerCase().equals("yes")){
                 hasIt.setResponse(true);
             }
@@ -256,11 +270,11 @@ public class SpecializationRequestThread implements Runnable {
         }
 
 
-        Hashtable<Requirement, Boolean> groupedRequirements = new Hashtable<Requirement, Boolean>();
         Iterator<Requirement> reqItr = spec.getReqs().iterator();
         while(reqItr.hasNext()){
             boolean met = false;
             boolean checkDouble = false;
+            boolean checkRanks = false;
             long needed = 1;
             long obtained = 0;
             Requirement req = reqItr.next();
@@ -268,20 +282,25 @@ public class SpecializationRequestThread implements Runnable {
             if(reqIDItr.hasNext()){
                 long firstEntry = reqIDItr.next();
                 
-                if(firstEntry == -4){
-                    firstEntry = reqIDItr.next();
-                    groupedRequirements.put(req, false);
-                }
+
                 if(firstEntry == -1){
                     checkDouble = true;
                 }else if (firstEntry == -2){
-                    if(!(cas.getDirectiveLevel(event, charid, reqIDItr.next()) >= reqIDItr.next())){
+                    if(!(cas.getDirectiveLevel(privateChannel, charid, reqIDItr.next()) >= reqIDItr.next())){
                         missingReqs.add(req.getName());
                     }
                     continue;
                 }else if (firstEntry == -3){
                     needed = reqIDItr.next();
-                }if(ids.contains(firstEntry)){
+                }else if (firstEntry == -4){
+                    checkRanks = true;
+                }else if (firstEntry == -5){
+                    if(!cas.checkOutfitTime(charid, reqIDItr.next())){
+                        missingReqs.add(req.getName());
+                    }
+                    continue;
+                }
+                if(ids.contains(firstEntry)){
                         met = true;
                 }
             }
@@ -292,37 +311,24 @@ public class SpecializationRequestThread implements Runnable {
                         met = true;
                         break;
                     }
+                }else if(checkRanks){
+                    long id = reqIDItr.next();
+                    String role = sr.findRoleAndCommandBySpecid(id).getRole();
+                    Role r = guild.getRolesByName(role, false).get(0);
+                    if(member.getRoles().contains(r)){
+                        met = true;
+                        break;
+                    }
                 }else if(ids.contains(reqIDItr.next())){
                     obtained++;
                     if(obtained >= needed){
                         met = true;
-                        if(groupedRequirements.contains(req)){
-                            groupedRequirements.put(req, true);
-                        }
                         break;  
                     }
                 }
             }
             if(!met){
                 missingReqs.add(req.getName());
-            }
-        }
-
-        if(groupedRequirements.size() > 0){
-            boolean met = false;
-            Iterator<Requirement> itr = groupedRequirements.keySet().iterator();
-            String compoundReq = "";
-            while(itr.hasNext()){
-                Requirement req = itr.next();
-                compoundReq = compoundReq + req.getName() + " or ";
-                if(groupedRequirements.get(req)){
-                    met = true;
-                    break;
-                }
-            }
-            compoundReq = compoundReq.replaceAll("or $", "");
-            if(!met){
-                missingReqs.add(compoundReq);
             }
         }
         
@@ -337,18 +343,35 @@ public class SpecializationRequestThread implements Runnable {
             msg.strip();
             msg = msg.replaceAll("\n$", "");
             msg = msg + "\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api";
-            event.getChannel().sendMessage(event.getAuthor().getAsMention() + msg).queue();
+            privateChannel.sendMessage(author.getAsMention() + msg).queue();
         }else{
+<<<<<<< HEAD
             event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Congratulations on your achievement of the " + spec.getRole() + ". You have met the requirements!").queue();
             //event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRolesByName(spec.getRole(), false).get(0)).queue();
             if((rank == null || rank.strip().toLowerCase().equals("[6 pfc]")) && event.getMember().getRoles().contains(event.getGuild().getRolesByName("Private First Class", false).get(0))){
+=======
+            if(!(spec.getManualReview() == null)){
+                String requirements = "";
+                for(String s : spec.getManualReview()){
+                    requirements += s + "\n";
+                }
+                privateChannel.sendMessage("This spec requires manual review for some items, an nco will be in touch").queue();
+                channel.sendMessage(author.getAsMention() + " Requires Manual review for the following items for " + spec.getRole() + " due to lack of info in the api:\n" + requirements
+                                                                                + "an <@&731602908059271310> will get in touch").queue();
+                return;
+            }
+            privateChannel.sendMessage("Congratulations, you have met the requirements for " + spec.getRole()).queue();
+            channel.sendMessage(author.getAsMention() + " Congratulations on your achievement of the " + spec.getRole() + ". You have met the requirements!").queue();
+            guild.addRoleToMember(member, guild.getRolesByName(spec.getRole(), false).get(0)).queue();
+            if((rank == null || rank.strip().toLowerCase().equals("[6 pfc]")) && member.getRoles().contains(guild.getRolesByName("Private First Class", false).get(0))){
+>>>>>>> 33c20b6 (ok i did alot, heavily optimised command threads and made correspondance happen in dms, fixed ALL of the specs, fixed promote command, changed some db stuff, and more)
                 try{
-                    event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRolesByName("Specialist", false).get(0)).queue();
-                    event.getGuild().removeRoleFromMember(event.getMember(), event.getGuild().getRolesByName("Private First Class", false).get(0)).queue();
-                    event.getMember().modifyNickname("[5 Spc] " + originalNickname).queue();
-                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + " Congratulations on your promotion to specialist!").queue();
+                    guild.addRoleToMember(member, guild.getRolesByName("Specialist", false).get(0)).queue();
+                    guild.removeRoleFromMember(member, guild.getRolesByName("Private First Class", false).get(0)).queue();
+                    member.modifyNickname("[5 Spc] " + originalNickname).queue();
+                    channel.sendMessage(author.getAsMention() + " Congratulations on your promotion to specialist!").queue();
                 }catch(HierarchyException e){
-                    event.getChannel().sendMessage(event.getAuthor().getAsMention() + " There was an error processing your promotion from PFC (possibly with my permissions)\n Contact an officer for manual promotion").queue();
+                    channel.sendMessage(author.getAsMention() + " There was an error processing your promotion from PFC (possibly with my permissions)\n Contact an officer for manual promotion").queue();
                 }
             }
         }

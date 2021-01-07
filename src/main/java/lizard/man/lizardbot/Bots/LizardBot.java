@@ -24,6 +24,11 @@ import org.springframework.stereotype.Component;
 
 import lizard.man.lizardbot.Listeners.CommandListener;
 import lizard.man.lizardbot.Listeners.EventWaiter;
+import lizard.man.lizardbot.Services.CensusAPIService;
+import lizard.man.lizardbot.repositories.RankRepository;
+import lizard.man.lizardbot.repositories.SpecializationsRepository;
+import lombok.Getter;
+import lombok.Setter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -33,6 +38,7 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 @Component
+@Getter @Setter
 public class LizardBot{
 
     private JDA jda;
@@ -40,12 +46,22 @@ public class LizardBot{
     @Value("${discord.token}")
     private String token;
 
+    //services
+    @Autowired
+    private CensusAPIService cas;
+    @Autowired
+    private SpecializationsRepository sr;
+    @Autowired
+    private RankRepository rr;
+
+
     //listeners
     @Autowired
-    CommandListener cl;
-    @Autowired
-    EventWaiter ew;
-    
+    private CommandListener cl;
+    @Autowired 
+    private EventWaiter ew;
+
+
     public LizardBot() throws LoginException{
     }
 
