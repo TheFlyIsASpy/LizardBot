@@ -14,15 +14,11 @@
 */
 package lizard.man.lizardbot.Threads;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import javax.imageio.ImageIO;
-import javax.swing.RepaintManager;
 
 import lizard.man.lizardbot.Bots.LizardBot;
 import lizard.man.lizardbot.Interfaces.SpecializationInfoInterface;
@@ -68,6 +64,8 @@ public class SpecializationRequestThread implements Runnable {
     private User author;
     private Guild guild;
 
+    private long timeout = 200;
+
 
     private Runnable threadReference = this;
 
@@ -77,8 +75,8 @@ public class SpecializationRequestThread implements Runnable {
         public void setResponse(boolean response){
             this.response = response;
         }
-        public void setTimeout(boolean response){
-            this.response = response;
+        public void setTimeout(boolean timeout){
+            this.timeout = timeout;
         }
     }
 
@@ -456,11 +454,14 @@ public class SpecializationRequestThread implements Runnable {
                 try{
                     
                     guild.addRoleToMember(member, guild.getRolesByName(nextRank.getRole(), false).get(0)).queue();
+                    System.out.println("removing role");
                     guild.removeRoleFromMember(member, guild.getRolesByName(previousRank.getRole(), false).get(0)).queue();
-                    member.modifyNickname(nextRank.getNametag() + originalNickname).queue();
+                    System.out.println("changing nickname");
+                    member.modifyNickname(nextRank.getNametag() + " " + originalNickname).queue();
+                    System.out.println("Sending promotion message");
                     guild.getTextChannelById("692285236263780352").sendMessage(author.getAsMention() + " Congratulations on your promotion to " + nextRank.getRole()).queue();
 
-                }catch(HierarchyException e){
+                }catch(Exception e){
                     channel.sendMessage(author.getAsMention() + " There was an error processing your promotion to " + nextRank.getRole() + "(possibly with my permissions)\n Contact an officer for manual promotion").queue();
                 }
             }
