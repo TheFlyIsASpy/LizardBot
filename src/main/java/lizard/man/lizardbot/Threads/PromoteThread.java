@@ -53,6 +53,9 @@ public class PromoteThread implements Runnable {
                 if(recipient.getRoles().contains(guild.getRolesByName("Member", false).get(0))){
                     guild.removeRoleFromMember(recipient, guild.getRolesByName("Member", false).get(0)).queue();
                 }
+                if(recipient.getRoles().contains(guild.getRolesByName("Private", false).get(0))){
+                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Private", false).get(0)).queue();
+                }
                 String name = recipient.getEffectiveName().strip();
                 int startIndex = 0;
                 if(name.substring(0,1).equals("[")){
@@ -68,7 +71,7 @@ public class PromoteThread implements Runnable {
                     }
                 }
                 name = name.substring(startIndex);
-                recipient.modifyNickname(lowestRank.getNametag() + name).queue();
+                recipient.modifyNickname(lowestRank.getNametag() + " " + name).queue();
                 channel.sendMessage(recipient.getAsMention() + " Congratulations on your promotion to PFC!").queue();
             }catch(HierarchyException e){
                 channel.sendMessage(author.getAsMention() + " The recipient has too high permissions for me to edit them").queue();

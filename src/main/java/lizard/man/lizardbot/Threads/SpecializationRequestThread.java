@@ -111,7 +111,7 @@ public class SpecializationRequestThread implements Runnable {
                 ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author), e -> {
                     requests = e.getMessage().getContentRaw().split("\\s+");
                     synchronized(threadReference){threadReference.notify();}
-                }, 30, TimeUnit.SECONDS, new Runnable(){
+                }, 60, TimeUnit.SECONDS, new Runnable(){
                     public void run(){
                         privateChannel.sendMessage(author.getAsMention() + " Request timed out").queue();
                         synchronized(threadReference){threadReference.notify();}
@@ -218,7 +218,7 @@ public class SpecializationRequestThread implements Runnable {
                 response.setResponse(true);
             }
             synchronized(threadReference){threadReference.notify();}
-        }, 30, TimeUnit.SECONDS, new Runnable(){
+        }, 60, TimeUnit.SECONDS, new Runnable(){
             public void run(){
                 response.setTimeout(true);
                 synchronized(threadReference){threadReference.notify();}
@@ -263,7 +263,7 @@ public class SpecializationRequestThread implements Runnable {
                 response.setResponse(true);
             }
             synchronized(threadReference){threadReference.notify();}
-        }, 30, TimeUnit.SECONDS, new Runnable(){
+        }, 60, TimeUnit.SECONDS, new Runnable(){
             public void run(){
                 response.setTimeout(true);
                 synchronized(threadReference){threadReference.notify();}
@@ -413,7 +413,7 @@ public class SpecializationRequestThread implements Runnable {
 
                 File f = new File("src/main/resources/Outfit_Resource_rules.png");
                 privateChannel.sendFile(f, "Outfit_Resource_rules.png").queue();
-                privateChannel.sendMessage("Do you agree to the rules above for promotion to" + rr.findByLevel(previousRank.getLevel() - 2).getRole() + "?").queue();
+                privateChannel.sendMessage("Do you agree to the rules above for promotion to " + rr.findByLevel(previousRank.getLevel() - 2).getRole() + "?").queue();
                 Bool response = new Bool();
                 ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author) && e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("no"), e -> {
                     if(e.getMessage().getContentRaw().strip().toLowerCase().equals("yes")){
@@ -450,11 +450,10 @@ public class SpecializationRequestThread implements Runnable {
                 try{
                     
                     guild.addRoleToMember(member, guild.getRolesByName(nextRank.getRole(), false).get(0)).queue();
-                    System.out.println("removing role");
-                    guild.removeRoleFromMember(member, guild.getRolesByName(previousRank.getRole(), false).get(0)).queue();
-                    System.out.println("changing nickname");
+                    if(member.getRoles().contains(guild.getRolesByName(previousRank.getRole(), false).get(0))){
+                        guild.removeRoleFromMember(member, guild.getRolesByName(previousRank.getRole(), false).get(0)).queue(); 
+                    }
                     member.modifyNickname(nextRank.getNametag() + " " + originalNickname).queue();
-                    System.out.println("Sending promotion message");
                     guild.getTextChannelById("692285236263780352").sendMessage(author.getAsMention() + " Congratulations on your promotion to " + nextRank.getRole()).queue();
 
                 }catch(Exception e){

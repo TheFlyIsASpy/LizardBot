@@ -38,7 +38,7 @@ public class CommandListener extends ListenerAdapter {
     @Autowired
     private LizardBot bot;
     
-    private ExecutorService es = Executors.newScheduledThreadPool(20);
+    private ExecutorService es = Executors.newCachedThreadPool();
     
 
     @Override
