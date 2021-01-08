@@ -39,7 +39,6 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
-import net.dv8tion.jda.api.exceptions.HierarchyException;
 
 public class SpecializationRequestThread implements Runnable {
     // services
@@ -63,8 +62,6 @@ public class SpecializationRequestThread implements Runnable {
     private Member member;
     private User author;
     private Guild guild;
-
-    private long timeout = 200;
 
 
     private Runnable threadReference = this;
@@ -106,10 +103,9 @@ public class SpecializationRequestThread implements Runnable {
                     SpecializationInfoInterface info = infoItr.next();
                     eb.addField(info.getRole() + ":", info.getCommand(), true);
                 }
-
-                eb.addField("Example Response: ", "la fs bomb engi liberator", false);
                 privateChannel.sendMessage(eb.build()).queue();
-                privateChannel.sendMessage(author.getAsMention() + " Please state the specializations you would like to request in a space seperated list").queue();
+                privateChannel.sendMessage("Example Response:\nbomb engi liberator").queue();
+                privateChannel.sendMessage(author.getAsMention() + " Please state the specializations you would like to request in a space seperated list.\n You can do multiple specs at the same time.").queue();
                 
                 requests = new String[]{};
                 ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author), e -> {
@@ -180,7 +176,7 @@ public class SpecializationRequestThread implements Runnable {
         }
         
         if(!hasRank){
-            channel.sendMessage(author.getAsMention() + "You must be atleast PFC to use this command. Contact an officer if this is a mistake.").queue();
+            channel.sendMessage(author.getAsMention() + " You must be atleast PFC to use this command. Contact an officer if this is a mistake.").queue();
             return false;
         }
         
@@ -193,7 +189,7 @@ public class SpecializationRequestThread implements Runnable {
                     nicknameArray = new String[]{nickname.substring(0, i+1).strip(), nickname.substring(i+1, nickname.length()).strip().split(" ")[0]};
                     break;
                 }else if(i == nickname.length() - 1){
-                    privateChannel.sendMessage(author.getAsMention() + "Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
+                    privateChannel.sendMessage(author.getAsMention() + " Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
                     return false;
                 }
             }
@@ -201,7 +197,7 @@ public class SpecializationRequestThread implements Runnable {
             if(nicknameArray != null){
                 rank = nicknameArray[0].strip();
             }else{
-                privateChannel.sendMessage(author.getAsMention() + "Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
+                privateChannel.sendMessage(author.getAsMention() + " Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").queue();
                 return false;
             }
             
@@ -213,7 +209,7 @@ public class SpecializationRequestThread implements Runnable {
         String characterFilter = "[^\\p{L}\\p{N}]";
         nickname = nickname.replaceAll(characterFilter, "");
 
-        channel.sendMessage(author.getAsMention() + "Request started in dms").queue();
+        channel.sendMessage(author.getAsMention() + " Request started in dms").queue();
 
         Bool response = new Bool();
         privateChannel.sendMessage(author.getAsMention() + " Requesting using character: " + nickname + ". Is this your ingame name? yes/no (default no in 15 seconds)").queue();
@@ -379,7 +375,7 @@ public class SpecializationRequestThread implements Runnable {
             
             msg.strip();
             msg = msg.replaceAll("\n$", "");
-            msg = msg + "\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api";
+            msg = msg + "\nContact an officer for manual consideration if this is an error. Some things are not checkable in the planetside api\nThe API takes 1-3 hours to update, so if you just unlocked these things they will not show up.";
             privateChannel.sendMessage(author.getAsMention() + msg).queue();
 
         }else{
