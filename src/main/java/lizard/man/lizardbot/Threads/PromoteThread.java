@@ -49,12 +49,12 @@ public class PromoteThread implements Runnable {
     public void run(){
         if(processRequest()){
             try{
-                guild.addRoleToMember(recipient, guild.getRolesByName(lowestRank.getRole(), false).get(0)).queue();
+                guild.addRoleToMember(recipient, guild.getRolesByName(lowestRank.getRole(), false).get(0)).complete();
                 if(recipient.getRoles().contains(guild.getRolesByName("Member", false).get(0))){
-                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Member", false).get(0)).queue();
+                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Member", false).get(0)).complete();
                 }
                 if(recipient.getRoles().contains(guild.getRolesByName("Private", false).get(0))){
-                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Private", false).get(0)).queue();
+                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Private", false).get(0)).complete();
                 }
                 String name = recipient.getEffectiveName().strip();
                 int startIndex = 0;
@@ -66,32 +66,31 @@ public class PromoteThread implements Runnable {
                         }
                     }
                     if(startIndex == 0){
-                        channel.sendMessage(author.getAsMention() + " Recipient has arbitrary [] please rename them").queue();
+                        channel.sendMessage(author.getAsMention() + " Recipient has arbitrary [] please rename them").complete();
                         return;
                     }
                 }
                 name = name.substring(startIndex);
-                recipient.modifyNickname(lowestRank.getNametag() + " " + name).queue();
-                channel.sendMessage(recipient.getAsMention() + " Congratulations on your promotion to PFC!").queue();
+                recipient.modifyNickname(lowestRank.getNametag() + " " + name).complete();
             }catch(HierarchyException e){
-                channel.sendMessage(author.getAsMention() + " The recipient has too high permissions for me to edit them").queue();
+                channel.sendMessage(author.getAsMention() + " The recipient has too high permissions for me to edit them").complete();
             }
         }
     }
 
     private boolean processRequest(){
         if(!guild.getId().equals("691820171240931339")){
-            channel.sendMessage(author.getAsMention() + " The promote command is specific to the 2RAF discord").queue();
+            channel.sendMessage(author.getAsMention() + " The promote command is specific to the 2RAF discord").complete();
             return false;
         }
         if(!(eventMember.getRoles().contains(guild.getRolesByName("Mentor", false).get(0)))){
-            channel.sendMessage(author.getAsMention() + " You must be a mentor to use this command. If you are an officer, stop hogging the bot").queue();
+            channel.sendMessage(author.getAsMention() + " You must be a mentor to use this command. If you are an officer, stop hogging the bot").complete();
             return false;
         }
 
         String[] request = message.getContentRaw().split(" ");
         if(!(request.length > 2)){
-            channel.sendMessage(author.getAsMention() + " Usage: <@789243746344632340> promote @recipient").queue();
+            channel.sendMessage(author.getAsMention() + " Usage: <@789243746344632340> promote @recipient").complete();
             return false;
         }
 
@@ -101,14 +100,14 @@ public class PromoteThread implements Runnable {
             String characterFilter = "[^\\p{L}\\p{N}]";
             id = request[2].replaceAll(characterFilter, "");
         }else{
-            channel.sendMessage(author.getAsMention() + " Usage: <@789243746344632340> promote @recipient").queue();
+            channel.sendMessage(author.getAsMention() + " Usage: <@789243746344632340> promote @recipient").complete();
             return false;
         }
 
         recipient = guild.getMemberById(id);
 
         if(recipient == null){
-            channel.sendMessage(author.getAsMention() + " " + request[2] + " does not exist or is not in the server").queue();
+            channel.sendMessage(author.getAsMention() + " " + request[2] + " does not exist or is not in the server").complete();
             return false;
         }
         
@@ -116,7 +115,7 @@ public class PromoteThread implements Runnable {
         for(Role r : recipient.getRoles()){
             if(rr.existsByRole(r.getName())){
                 if(rr.findByRole(r.getName()).getLevel() <= lowestRank.getLevel()){
-                    channel.sendMessage(author.getAsMention() + " Recipient is already pfc or higher").queue();
+                    channel.sendMessage(author.getAsMention() + " Recipient is already pfc or higher").complete();
                     return false;
                 }
             }
