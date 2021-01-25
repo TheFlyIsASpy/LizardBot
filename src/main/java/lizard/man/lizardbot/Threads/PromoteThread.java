@@ -44,18 +44,14 @@ public class PromoteThread implements Runnable {
         this.guild = event.getGuild();
         this.message = event.getMessage();
         this.rr = bot.getRr();
+        this.channel = event.getChannel();
     }
     
     public void run(){
         if(processRequest()){
             try{
                 guild.addRoleToMember(recipient, guild.getRolesByName(lowestRank.getRole(), false).get(0)).complete();
-                if(recipient.getRoles().contains(guild.getRolesByName("Member", false).get(0))){
-                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Member", false).get(0)).complete();
-                }
-                if(recipient.getRoles().contains(guild.getRolesByName("Private", false).get(0))){
-                    guild.removeRoleFromMember(recipient, guild.getRolesByName("Private", false).get(0)).complete();
-                }
+                guild.removeRoleFromMember(recipient, guild.getRolesByName("Private", false).get(0)).complete();
                 String name = recipient.getEffectiveName().strip();
                 int startIndex = 0;
                 if(name.substring(0,1).equals("[")){
@@ -72,6 +68,8 @@ public class PromoteThread implements Runnable {
                 }
                 name = name.substring(startIndex);
                 recipient.modifyNickname(lowestRank.getNametag() + " " + name).complete();
+                channel.sendMessage(recipient.getAsMention() + " has been promoted to PFC!").complete();
+                guild.getTextChannelById("797248485061558277").sendMessage(recipient.getAsMention() + " requires promotion to PFC in game").complete();
             }catch(HierarchyException e){
                 channel.sendMessage(author.getAsMention() + " The recipient has too high permissions for me to edit them").complete();
             }

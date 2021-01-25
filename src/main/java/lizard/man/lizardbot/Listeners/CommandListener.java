@@ -26,7 +26,6 @@ import lizard.man.lizardbot.Bots.LizardBot;
 
 import lombok.NoArgsConstructor;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -66,21 +65,14 @@ public class CommandListener extends ListenerAdapter {
                             es.execute(new PromoteThread(event, bot));
                             break;
                         case "help":
-                            EmbedBuilder eb = new EmbedBuilder();
-                            eb.setTitle("Lizard Bot Commands");
-                            eb.setDescription("A list of <@789243746344632340> commands");
-                            eb.addField("Usage", "<@789243746344632340> command", false);
-                            eb.addField("request:", "Starts a specialization request, only usable in 2RAF", false);
-                            eb.addField("help:", "Displays a list of commands", false);
-                            event.getChannel().sendMessage(event.getAuthor().getAsMention()).queue();
-                            event.getChannel().sendMessage(eb.build()).queue();
+                            event.getChannel().sendMessage("I am still developing the bot so I'll do this later").queue();
                             break;
                         default:
                             event.getMessage().getChannel().sendMessage(event.getAuthor().getAsMention() + " " + message[1] + " is not a valid command.").queue();
                             break;
                     }
                 }else{
-                    event.getMessage().getChannel().sendMessage(event.getAuthor().getAsMention() + "To see a list of commands use: <@789243746344632340> help").queue();
+                    event.getMessage().getChannel().sendMessage(event.getAuthor().getAsMention() + "To see a list of commands use: <@789243746344632340> help (actually dont I havent done that command yet)").queue();
                 }
                 break;
         }
