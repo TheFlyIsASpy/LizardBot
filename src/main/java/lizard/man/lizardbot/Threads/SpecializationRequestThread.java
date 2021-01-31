@@ -20,6 +20,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.security.auth.PrivateCredentialPermission;
+
 import lizard.man.lizardbot.Bots.LizardBot;
 import lizard.man.lizardbot.Interfaces.SpecializationInfoInterface;
 import lizard.man.lizardbot.Listeners.EventWaiter;
@@ -202,7 +204,7 @@ public class SpecializationRequestThread implements Runnable {
                     nicknameArray = new String[]{nickname.substring(0, i+1).strip(), nickname.substring(i+1, nickname.length()).strip().split(" ")[0]};
                     break;
                 }else if(i == nickname.length() - 1){
-                    privateChannel.sendMessage(author.getAsMention() + " Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").complete();
+                    channel.sendMessage(author.getAsMention() + " Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").complete();
                     return false;
                 }
             }
@@ -210,7 +212,7 @@ public class SpecializationRequestThread implements Runnable {
             if(nicknameArray != null){
                 rank = nicknameArray[0].strip();
             }else{
-                privateChannel.sendMessage(author.getAsMention() + " Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").complete();
+                channel.sendMessage(author.getAsMention() + " Your nickname is invalid. Please change it to either [Rank] InGameName AnythingElse or just InGameName AnythingElse").complete();
                 return false;
             }
             
@@ -223,6 +225,13 @@ public class SpecializationRequestThread implements Runnable {
         nickname = nickname.replaceAll(characterFilter, "");
 
         channel.sendMessage(author.getAsMention() + " Request started in dms").complete();
+
+        try{
+            privateChannel.sendMessage("Started request").complete();
+        }catch(Exception e){
+            channel.sendMessage(author.getAsMention() + " Could not send dm. Make sure you have dms enabled").complete();
+            return false;
+        }
 
         charid = cas.getCharacterId(privateChannel, author, nickname);
         if(charid == null){
