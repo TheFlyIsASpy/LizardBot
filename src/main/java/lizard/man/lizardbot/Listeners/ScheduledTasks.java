@@ -97,16 +97,16 @@ public class ScheduledTasks {
             birthdayCache.add(b.getDiscordID());
         }
         if(general.length() > 0){
-            guild.getTextChannelById("692293569716944906").sendMessage("Testing for general: " + message1 + general + message2).complete();
+            guild.getTextChannelById("772135443612696607").sendMessage(message1 + general + message2).complete();
         }
         if(blops.length() > 0){
-            guild.getTextChannelById("692293569716944906").sendMessage("Testing for blops: " + message1 + blops + message2).complete();
+            guild.getTextChannelById("742377843522142339").sendMessage(message1 + blops + message2).complete();
         }
         if(phoenix.length() > 0){
-            guild.getTextChannelById("692293569716944906").sendMessage("Testing for phoenix: " + message1 + phoenix + message2).complete();
+            guild.getTextChannelById("742067196674572339").sendMessage(message1 + phoenix + message2).complete();
         }
         if(bfg.length() > 0){
-            guild.getTextChannelById("692293569716944906").sendMessage("Testing for bfg: " + message1 + bfg + message2).complete();
+            guild.getTextChannelById("742067726893318195").sendMessage(message1 + bfg + message2).complete();
         }
     }
 
