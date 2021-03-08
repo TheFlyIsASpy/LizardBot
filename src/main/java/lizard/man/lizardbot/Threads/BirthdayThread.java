@@ -115,7 +115,7 @@ public class BirthdayThread implements Runnable {
                 return;
             }
 
-            if(response.matches("^(0[1-9]|[10-12])/(0[1-9]|[10-31])$")){
+            if(response.matches("^(0[1-9]|1[0-2])/(0[1-9]|[1-2][0-9]|3[0-1])$")){
                 privateChannel.sendMessage("is " + response + " your correct birthday? type yes or no").complete();
                 ew.waitForEvent(PrivateMessageReceivedEvent.class, e -> e.getAuthor().equals(author), e -> {
                     if(e.getMessage().getContentRaw().strip().toLowerCase().equals("yes") || e.getMessage().getContentRaw().strip().toLowerCase().equals("y")){

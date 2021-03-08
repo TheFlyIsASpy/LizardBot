@@ -56,7 +56,7 @@ public class CommandListener extends ListenerAdapter {
             case "789243746344632340":
                 if(message.length > 1){
                     switch(message[1].toLowerCase()){
-                        /*
+                        
                         case "request":
                             if(!event.getChannel().getId().equals("705629800357691473")){
                                 return;
@@ -66,23 +66,20 @@ public class CommandListener extends ListenerAdapter {
                         case "promote":
                             bot.execute(new PromoteThread(event, bot));
                             break;
-                        */
                         case "birthday":
                             bot.execute(new BirthdayThread(event, bot));
                             break;
                         case "help":
                             event.getChannel().sendMessage("I am still developing the bot so I'll do this later").queue();
                             break;
-                        /*
                         default:
                             event.getMessage().getChannel().sendMessage(event.getAuthor().getAsMention() + " " + message[1] + " is not a valid command.").queue();
                             break;
-                        */
+                        
                     }
                 }else{
-                    /*
                     event.getMessage().getChannel().sendMessage(event.getAuthor().getAsMention() + "To see a list of commands use: <@789243746344632340> help (actually dont I havent done that command yet)").queue();
-                    */
+                    
                 }
                 break;
         }
