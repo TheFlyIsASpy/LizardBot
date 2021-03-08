@@ -52,6 +52,7 @@ public class ScheduledTasks {
 
     @Scheduled(cron = "0 0 8 * * *")
     private void checkBirthdays(){
+        System.out.println("started");
         ZonedDateTime now = LocalDateTime.now().atZone(ZoneId.of("America/Indiana/Indianapolis"));
         DateTimeFormatter format = DateTimeFormatter.ofPattern("MM/dd");
         String date = format.format(now);
@@ -66,6 +67,12 @@ public class ScheduledTasks {
                 }
             }
         }
+        String message1 = "@here Hello everyone! SSSay HAPPY BIRTHDAY to ";
+        String message2 = "! *flicks tongue* HAPPY BIRTHsDAY";
+        String general = "";
+        String blops = "";
+        String phoenix = "";
+        String bfg = "";
         while(itr.hasNext()){
             Birthday b = itr.next();
             Member m = guild.getMemberById(b.getDiscordID());
@@ -74,17 +81,32 @@ public class ScheduledTasks {
             }catch(Exception e){
                 guild.getTextChannelById("692293569716944906").sendMessage("could not add role to " + m.getAsMention() + " " + e.toString()).complete();
             }
+        
             if(m.getRoles().contains(guild.getRoleById("742376474627276871"))){
-                guild.getTextChannelById("742377843522142339").sendMessage("@here Hello everyone! It is " + m.getAsMention() + "'(s) BIRTHDAY! *flicks tongue* HAPPY BIRTHsDAY").complete();
+                blops += " " + m.getAsMention();
             }
             if(m.getRoles().contains(guild.getRoleById("742065879742808105"))){
-                guild.getTextChannelById("742067196674572339").sendMessage("@here Hello everyone! It is " + m.getAsMention() + "'(s) BIRTHDAY! *flicks tongue* HAPPY BIRTHsDAY").complete();
+                phoenix += " " + m.getAsMention();
             }
             if(m.getRoles().contains(guild.getRoleById("742065880988647456"))){
-                guild.getTextChannelById("742067726893318195").sendMessage("@here Hello everyone! It is " + m.getAsMention() + "'(s) BIRTHDAY! *flicks tongue* HAPPY BIRTHsDAY").complete();
+                bfg += " " + m.getAsMention();
             }
-            guild.getTextChannelById("772135443612696607").sendMessage("@here Hello everyone! It is " + m.getAsMention() + "'(s) BIRTHDAY! *flicks tongue* HAPPY BIRTHsDAY").complete();
+
+            general += " " + m.getAsMention();
+
             birthdayCache.add(b.getDiscordID());
+        }
+        if(general.length() > 0){
+            guild.getTextChannelById("692293569716944906").sendMessage("Testing for general: " + message1 + general + message2).complete();
+        }
+        if(blops.length() > 0){
+            guild.getTextChannelById("692293569716944906").sendMessage("Testing for blops: " + message1 + blops + message2).complete();
+        }
+        if(phoenix.length() > 0){
+            guild.getTextChannelById("692293569716944906").sendMessage("Testing for phoenix: " + message1 + phoenix + message2).complete();
+        }
+        if(bfg.length() > 0){
+            guild.getTextChannelById("692293569716944906").sendMessage("Testing for bfg: " + message1 + bfg + message2).complete();
         }
     }
 
@@ -94,6 +116,11 @@ public class ScheduledTasks {
             Iterator<String> itr = birthdayCache.iterator();
             while(itr.hasNext()){
                 String id = itr.next();
+                try{
+                    guild.removeRoleFromMember(guild.getMemberById(id), guild.getRoleById("808010736437166097")).complete();
+                }catch(Exception e){
+                    guild.getTextChannelById("692293569716944906").sendMessage("could not remove role from " + guild.getMemberById(id).getAsMention() + " " + e.toString()).complete();
+                }
                 guild.removeRoleFromMember(guild.getMemberById(id), guild.getRoleById("808010736437166097")).complete();
             }
             birthdayCache = new HashSet<String>();
