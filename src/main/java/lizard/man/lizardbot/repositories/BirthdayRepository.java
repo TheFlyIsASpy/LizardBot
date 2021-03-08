@@ -12,26 +12,18 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-package lizard.man.lizardbot.Threads;
+package lizard.man.lizardbot.repositories;
 
-import java.util.List;
+import java.util.HashSet;
 
-import lizard.man.lizardbot.Bots.LizardBot;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 
-public class blackopsSpreadSheetThread implements Runnable {
+import lizard.man.lizardbot.Models.Birthday;
 
-    private Guild guild;
-    private List<Member> members;
-    
-    public blackopsSpreadSheetThread(LizardBot bot) {
-        guild = bot.getJda().getGuildById("691820171240931339");
-        members = guild.getMembersWithRoles(guild.getRolesByName("⚔ BLACK OPS", false));
-    }
-    
-    public void run(){
-        
-    }
+@Repository
+public interface BirthdayRepository extends CrudRepository<Birthday, Long>{
+    HashSet<Birthday> findByDate(String birthday);
+    boolean existsByDiscordID(String id);
+    Birthday findByDiscordID(String discordID);
 }
-

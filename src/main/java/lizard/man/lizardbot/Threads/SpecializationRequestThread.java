@@ -20,8 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.security.auth.PrivateCredentialPermission;
-
 import lizard.man.lizardbot.Bots.LizardBot;
 import lizard.man.lizardbot.Interfaces.SpecializationInfoInterface;
 import lizard.man.lizardbot.Listeners.EventWaiter;

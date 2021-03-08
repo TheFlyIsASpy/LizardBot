@@ -15,6 +15,9 @@
 
 package lizard.man.lizardbot.Bots;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import javax.annotation.PostConstruct;
 import javax.security.auth.login.LoginException;
 
@@ -25,6 +28,7 @@ import org.springframework.stereotype.Component;
 import lizard.man.lizardbot.Listeners.CommandListener;
 import lizard.man.lizardbot.Listeners.EventWaiter;
 import lizard.man.lizardbot.Services.CensusAPIService;
+import lizard.man.lizardbot.repositories.BirthdayRepository;
 import lizard.man.lizardbot.repositories.RankRepository;
 import lizard.man.lizardbot.repositories.SpecializationsRepository;
 import lombok.Getter;
@@ -53,6 +57,8 @@ public class LizardBot{
     private SpecializationsRepository sr;
     @Autowired
     private RankRepository rr;
+    @Autowired
+    private BirthdayRepository br;
 
 
     //listeners
@@ -60,6 +66,9 @@ public class LizardBot{
     private CommandListener cl;
     @Autowired 
     private EventWaiter ew;
+
+    //threadpool
+    private ExecutorService es = Executors.newCachedThreadPool();
 
 
     public LizardBot() throws LoginException{
@@ -75,5 +84,9 @@ public class LizardBot{
                         .build();
         jda.getPresence().setStatus(OnlineStatus.ONLINE);
         jda.getPresence().setActivity(Activity.watching("tasty frogs play planetside"));
+    }
+
+    public void execute(Runnable thread){
+        es.execute(thread);
     }
 }
