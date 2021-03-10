@@ -50,7 +50,7 @@ public class ScheduledTasks {
 
     private HashSet<String> birthdayCache = new HashSet<String>();
 
-    @Scheduled(cron = "0 0 8 * * *")
+    @Scheduled(cron = "0 0 8 * * *", zone = "America/Indiana/Indianapolis")
     private void checkBirthdays(){
         System.out.println("started");
         ZonedDateTime now = LocalDateTime.now().atZone(ZoneId.of("America/Indiana/Indianapolis"));
@@ -110,7 +110,7 @@ public class ScheduledTasks {
         }
     }
 
-    @Scheduled(cron = "0 0 7 * * *")
+    @Scheduled(cron = "0 0 7 * * *", zone = "America/Indiana/Indianapolis")
     private void removeBirthdays(){
         if(birthdayCache.size() > 0){
             Iterator<String> itr = birthdayCache.iterator();
