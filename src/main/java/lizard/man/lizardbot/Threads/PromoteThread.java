@@ -87,7 +87,7 @@ public class PromoteThread implements Runnable {
             return false;
         }
 
-        String[] request = message.getContentRaw().split(" ");
+        String[] request = message.getContentRaw().split("\\s+");
         if(!(request.length > 2)){
             channel.sendMessage(author.getAsMention() + " Usage: <@789243746344632340> promote @recipient").complete();
             return false;
